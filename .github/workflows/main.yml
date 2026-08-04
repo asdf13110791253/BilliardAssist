@@ -35,24 +35,25 @@ jobs:
           distribution: 'temurin'
 
       # --------------------------------------------------------
-      # 3. 安装 Gradle 8.4（用来生成 wrapper jar）
+      # 【关键修复】3. 强制清除所有 Gradle 缓存（防止坏 Jar 复活）
       # --------------------------------------------------------
-      - name: Install Gradle
+      - name: Clean Gradle Cache
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /opt/
-          ln -sf /opt/gradle-8.4/bin/gradle /usr/local/bin/gradle
-          gradle --version
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/
+          rm -rf gradle/wrapper/dists/
 
       # --------------------------------------------------------
-      # 4. 生成 gradle-wrapper.jar（如果缺失的话）
+      # 4. 确保 gradle-wrapper.jar 存在且有效
+      #    即使文件存在，也强制重新生成，确保类文件完整
       # --------------------------------------------------------
       - name: Ensure Gradle Wrapper JAR exists
         run: |
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "gradle-wrapper.jar 缺失，正在生成..."
-            gradle wrapper --gradle-version 8.4 --distribution-type bin
-          fi
+          # 删除旧的 wrapper 目录，强制重新生成
+          rm -rf gradle/wrapper/
+          # 使用项目现有的 properties 配置来生成 wrapper
+          # 如果你的项目用的是 7.x，这里会自动识别，不需要写死 8.4
+          gradle wrapper
           ls -la gradle/wrapper/
           # 验证 jar 文件有效
           file gradle/wrapper/gradle-wrapper.jar
@@ -83,25 +84,17 @@ jobs:
           mkdir -p ~/.gradle
           cat > ~/.gradle/init.gradle << 'EOF'
           allprojects {
-            buildscript {
               repositories {
-                maven { url 'https://maven.aliyun.com/repository/public' }
-                maven { url 'https://maven.aliyun.com/repository/google' }
-                google()
-                mavenCentral()
+                  maven { url 'https://maven.aliyun.com/repository/public' }
+                  maven { url 'https://maven.aliyun.com/repository/google' }
+                  google()
+                  mavenCentral()
               }
-            }
-            repositories {
-              maven { url 'https://maven.aliyun.com/repository/public' }
-              maven { url 'https://maven.aliyun.com/repository/google' }
-              google()
-              mavenCentral()
-            }
           }
           EOF
 
       # --------------------------------------------------------
-      # 8. 缓存 Gradle 依赖（二次构建提速 60%+）
+      # 8. 缓存 Gradle 依赖（现在缓存是干净的）
       # --------------------------------------------------------
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -146,9 +139,6 @@ jobs:
           echo ""
           echo "===== Release APK ====="
           ls -lh app/build/outputs/apk/release/ 2>/dev/null || echo "(未生成)"
-          echo ""
-          echo "===== APK 包信息 ====="
-          aapt dump badging app/build/outputs/apk/debug/app-debug.apk 2>/dev/null | head -20 || echo "(aapt 不可用)"
 
       # --------------------------------------------------------
       # 13. 上传 Debug APK（保留 30 天）
