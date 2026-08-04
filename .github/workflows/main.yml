@@ -1,53 +1,173 @@
-name: Android CI (Stable Native)
+# ============================================================
+#  LingMiao 自动构建工作流
+#  推送到 main/master 分支时自动编译 Debug & Release APK
+#  也可在 GitHub 网页上手动触发 (Actions → Run workflow)
+# ============================================================
+
+name: Build APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main, master]
   pull_request:
-    branches: [ "main" ]
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   build:
-    # 使用 GitHub 提供的标准 Ubuntu 环境
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
+      # --------------------------------------------------------
       # 1. 拉取代码
+      # --------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 【关键】强制使用 JDK 17，并清除缓存
+      # --------------------------------------------------------
+      # 2. 设置 JDK 17
+      # --------------------------------------------------------
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
-          check-latest: true # 确保下载最新的 JDK 17，而不是用缓存的旧版
 
-      # 3. 设置 Android SDK 环境变量
+      # --------------------------------------------------------
+      # 3. 安装 Gradle 8.4（用来生成 wrapper jar）
+      # --------------------------------------------------------
+      - name: Install Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/
+          ln -sf /opt/gradle-8.4/bin/gradle /usr/local/bin/gradle
+          gradle --version
+
+      # --------------------------------------------------------
+      # 4. 生成 gradle-wrapper.jar（如果缺失的话）
+      # --------------------------------------------------------
+      - name: Ensure Gradle Wrapper JAR exists
+        run: |
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "gradle-wrapper.jar 缺失，正在生成..."
+            gradle wrapper --gradle-version 8.4 --distribution-type bin
+          fi
+          ls -la gradle/wrapper/
+          # 验证 jar 文件有效
+          file gradle/wrapper/gradle-wrapper.jar
+
+      # --------------------------------------------------------
+      # 5. 设置 Android SDK + 接受 License
+      # --------------------------------------------------------
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          # 这里指定你需要编译的 Android SDK 版本和构建工具版本
-          # 如果你的项目用的是 API 34，就写 34
-          api-level: 34
-          build-tools-version: "34.0.0"
-          # 接受所有许可，避免之前那个报错
-          accept-android-sdk-licenses: true
 
-      # 4. 给 Gradle 执行权限（确保仓库根目录有 gradlew 文件）
-      - name: Grant execute permission for gradlew
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
+      # --------------------------------------------------------
+      # 6. 安装 NDK 和 CMake
+      # --------------------------------------------------------
+      - name: Install NDK & CMake
+        run: |
+          sdkmanager "ndk;26.1.10909125"
+          sdkmanager "cmake;3.22.1"
+          echo "NDK_PATH=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      # --------------------------------------------------------
+      # 7. 配置国内 Maven 镜像加速
+      # --------------------------------------------------------
+      - name: Configure Gradle mirror
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/init.gradle << 'EOF'
+          allprojects {
+            buildscript {
+              repositories {
+                maven { url 'https://maven.aliyun.com/repository/public' }
+                maven { url 'https://maven.aliyun.com/repository/google' }
+                google()
+                mavenCentral()
+              }
+            }
+            repositories {
+              maven { url 'https://maven.aliyun.com/repository/public' }
+              maven { url 'https://maven.aliyun.com/repository/google' }
+              google()
+              mavenCentral()
+            }
+          }
+          EOF
+
+      # --------------------------------------------------------
+      # 8. 缓存 Gradle 依赖（二次构建提速 60%+）
+      # --------------------------------------------------------
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # --------------------------------------------------------
+      # 9. 赋予 gradlew 执行权限
+      # --------------------------------------------------------
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # 5. 构建 Debug APK
+      # --------------------------------------------------------
+      # 10. 编译 Debug APK
+      # --------------------------------------------------------
       - name: Build Debug APK
-        run: ./gradlew clean assembleDebug -x test --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
 
-      # 6. 上传 APK
+      # --------------------------------------------------------
+      # 11. 编译 Release APK（无签名，方便后续自己签名）
+      # --------------------------------------------------------
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        continue-on-error: true
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
+
+      # --------------------------------------------------------
+      # 12. 显示构建产物信息
+      # --------------------------------------------------------
+      - name: Show APK info
+        run: |
+          echo "===== Debug APK ====="
+          ls -lh app/build/outputs/apk/debug/ 2>/dev/null || echo "(未生成)"
+          echo ""
+          echo "===== Release APK ====="
+          ls -lh app/build/outputs/apk/release/ 2>/dev/null || echo "(未生成)"
+          echo ""
+          echo "===== APK 包信息 ====="
+          aapt dump badging app/build/outputs/apk/debug/app-debug.apk 2>/dev/null | head -20 || echo "(aapt 不可用)"
+
+      # --------------------------------------------------------
+      # 13. 上传 Debug APK（保留 30 天）
+      # --------------------------------------------------------
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: BilliardAssist-Debug
+          name: LingMiao-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
+          retention-days: 30
+
+      # --------------------------------------------------------
+      # 14. 上传 Release APK（如果存在）
+      # --------------------------------------------------------
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        continue-on-error: true
+        with:
+          name: LingMiao-Release
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
