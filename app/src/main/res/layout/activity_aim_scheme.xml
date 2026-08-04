@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F0">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 标题栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card_white"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🎯 图像识别方案选择"
+                android:textColor="#1A237E"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_close_scheme"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="✕"
+                android:textSize="18sp"
+                android:textColor="#666666" />
+        </LinearLayout>
+
+        <!-- 方案选择（零一到零八） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_white"
+            android:padding="16dp"
+            android:layout_marginTop="12dp">
+
+            <RadioGroup
+                android:id="@+id/rg_scheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <RadioButton android:id="@+id/rb_s0" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零一 · 标准台球" android:checked="true" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零二 · 九球" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零三 · 斯诺克" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零四 · 开伦" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零五 · 黑八" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零六 · 十球" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零七 · 十四一" android:buttonTint="#5D4037" />
+                <RadioButton android:id="@+id/rb_s7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="零八 · 自定义" android:buttonTint="#5D4037" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- V - 亮度阈值 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_white"
+            android:padding="16dp"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="V（亮度）"
+                    android:textColor="#333333"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_v_value"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="232"
+                    android:textColor="#5D4037"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btn_reset_v"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="8dp"
+                    android:text="重置"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_v"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="255"
+                android:progress="232"
+                android:thumbTint="#5D4037"
+                android:progressTint="#5D4037" />
+        </LinearLayout>
+
+        <!-- S - 圆白度 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_white"
+            android:padding="16dp"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="S（圆白度）"
+                    android:textColor="#333333"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_s_value"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="15"
+                    android:textColor="#5D4037"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btn_reset_s"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="8dp"
+                    android:text="重置"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_s"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                android:progress="15"
+                android:thumbTint="#5D4037"
+                android:progressTint="#5D4037" />
+        </LinearLayout>
+
+        <!-- P - 圆形检测灵敏度 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_white"
+            android:padding="16dp"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="P（圆形检测灵敏度）"
+                    android:textColor="#333333"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_p_value"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="15"
+                    android:textColor="#5D4037"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btn_reset_p"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="8dp"
+                    android:text="重置"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_p"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                android:progress="15"
+                android:thumbTint="#5D4037"
+                android:progressTint="#5D4037" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

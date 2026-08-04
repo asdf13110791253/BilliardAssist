@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.billiardassist'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.billiardassist"
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        // OpenCV 需要 Neon 支持
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 确保 jniLibs 被打包进 APK
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.10.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    // OpenCV 依赖（将 opencv-android-4.x.x.jar 放到 app/libs 下）
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}

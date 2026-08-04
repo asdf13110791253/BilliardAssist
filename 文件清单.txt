@@ -1,0 +1,102 @@
+========================================================
+BilliardAssist 完整文件清单 (共 54 个条目)
+========================================================
+
+📄 根目录文件 (5个)
+  .github/workflows/build.yml      ✅ GitHub Actions CI 脚本
+  README.md                        ✅ 项目说明
+  素材补齐说明.md                   ✅ OpenCV + 模板图补齐教程
+  文件清单.txt                      ✅ 本文件
+  build.gradle                      ✅ 根级 Gradle (AGP 7.4.2)
+  settings.gradle                   ✅ 项目设置
+
+📄 Gradle Wrapper (1个)
+  gradle/wrapper/gradle-wrapper.properties  ✅ Gradle 7.5
+
+📄 App 级配置 (3个)
+  app/.gitignore                    ✅ Git 忽略规则
+  app/build.gradle                  ✅ 应用级 Gradle
+  app/proguard-rules.pro           ✅ 混淆规则
+
+📄 Java 源码 (10个)
+  app/src/main/java/com/example/billiardassist/
+    App.java                          ✅ Application 全局类
+    MainActivity.java                 ✅ 主入口
+    OverlayService.java              ✅ 悬浮窗+截屏+画线
+    AimDetector.java                ✅ OpenCV 模板匹配
+    ImageUtils.java                 ✅ Image→Bitmap 工具
+    ai/AimProcessor.java           ✅ 8方案+V/S/P参数
+    service/CapturePermissionActivity.java  ✅ 录屏授权中转
+    service/CaptureService.java          ✅ 录屏采集服务
+    service/FloatingService.java        ✅ 悬浮窗绘制
+    ui/GuideActivity.java           ✅ 引导页
+    ui/CalibrateActivity.java      ✅ 校准页
+    ui/SettingsActivity.java       ✅ 设置页
+    ui/AimSchemeActivity.java      ✅ 方案选择
+
+📄 XML 布局 (6个)
+  app/src/main/res/layout/
+    activity_main.xml                ✅ 主界面布局
+    activity_guide.xml               ✅ 引导页布局
+    activity_settings.xml            ✅ 设置页布局
+    activity_calibrate.xml           ✅ 校准页布局
+    activity_aim_scheme.xml          ✅ 方案选择布局
+    layout_floating.xml              ✅ 悬浮窗布局
+
+📄 图片素材 - drawable (22个) ✅ 已自动生成
+  app/src/main/res/drawable/
+    aim_template.png               ✅ 瞄准环模板 (OpenCV 匹配用)
+    bg_card_gradient.png           ✅ 渐变卡片背景
+    bg_card_white.png              ✅ 白色卡片背景
+    bg_btn_purple.png              ✅ 深紫按钮背景
+    bg_btn_green.png               ✅ 绿色按钮背景
+    bg_btn_red.png                 ✅ 红色退出按钮
+    bg_status_active.png            ✅ "已激活"绿色标签
+    bg_status_inactive.png          ✅ "未激活"红色标签
+    bg_status_checking.png          ✅ "校验中"黄色标签
+    color_black.png                ✅ 黑色方块
+    color_white.png                ✅ 白色方块
+    color_gray.png                 ✅ 灰色方块
+    color_red.png                  ✅ 红色方块
+    color_green.png                ✅ 绿色方块
+    color_blue.png                 ✅ 蓝色方块
+    color_yellow.png               ✅ 黄色方块
+    color_cyan.png                 ✅ 青色方块
+    color_magenta.png              ✅ 品红色方块
+    color_orange.png               ✅ 橙色方块
+    ic_plus.png                    ✅ 加号图标
+    ic_minus.png                   ✅ 减号图标
+    ic_arrow_up.png                ✅ 向上箭头
+    ic_arrow_down.png              ✅ 向下箭头
+    ic_check.png                   ✅ 勾选图标
+    ic_close.png                   ✅ 关闭 X 图标
+    ic_overlay_aim.png             ✅ 悬浮窗准星图标
+    table_cloth_green.png          ✅ 绿色桌布纹理
+    table_cloth_blue.png           ✅ 蓝色桌布纹理
+    table_cloth_red.png            ✅ 红色桌布纹理
+    radio_checked.png              ✅ 单选选中
+    radio_unchecked.png            ✅ 单选未选中
+    switch_on.png                  ✅ 开关-开
+    switch_off.png                 ✅ 开关-关
+
+📄 图片素材 - mipmap (5个) ✅ 已自动生成
+  app/src/main/res/mipmap-mdpi/ic_launcher.png    ✅ 48x48
+  app/src/main/res/mipmap-hdpi/ic_launcher.png    ✅ 72x72
+  app/src/main/res/mipmap-xhdpi/ic_launcher.png   ✅ 96x96
+  app/src/main/res/mipmap-xxhdpi/ic_launcher.png  ✅ 144x144
+  app/src/main/res/mipmap-xxxhdpi/ic_launcher.png ✅ 192x192
+
+📄 字符串资源 (1个)
+  app/src/main/res/values/strings.xml  ✅ 全部字符串
+
+📄 占位目录 (需手动补齐, 3个)
+  app/libs/README.txt              📌 放 opencv-android-4.x.x.jar
+  app/src/main/jniLibs/armeabi-v7a/README.txt  📌 放 .so
+  app/src/main/jniLibs/arm64-v8a/README.txt     📌 放 .so
+
+========================================================
+✅ 源码文件: 27 个 (全部就绪)
+✅ 图片素材: 33 个 (全部自动生成)
+✅ XML 布局: 6 个
+⚠️ 需手动补齐: 4 个文件 (OpenCV + 模板图)
+========================================================
