@@ -36,9 +36,15 @@ jobs:
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
 
-      # 新增：给gradlew添加可执行权限
+      # 修复1：赋予gradlew执行权限
       - name: Grant execute permission
         run: chmod +x ./gradlew
+
+      # 修复2：自动补全损坏/缺失的gradle-wrapper
+      - name: Fix Gradle Wrapper
+        run: |
+          ./gradlew wrapper --gradle-version 8.4
+          chmod +x ./gradlew
 
       - name: Build APK
         run: ./gradlew assembleRelease --stacktrace
