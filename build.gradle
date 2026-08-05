@@ -9,17 +9,8 @@ buildscript {
     }
 }
 
-// ===== 关键修复：添加 allprojects 代码块 =====
-// 作用：告诉所有子模块（包括 app 模块）去哪里下载依赖（如 OpenCV）
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        // 如果腾讯云镜像更快，也可以保留这一行
-        // maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
-    }
-}
-// ===========================================
+// 已删除 allprojects 代码块：彻底解决和 settings.gradle 的仓库配置冲突
+// OpenCV等依赖的仓库地址已统一迁移到 settings.gradle 中管理，符合Gradle 7+官方规范
 
 task clean(type: Delete) {
     delete rootProject.buildDir
