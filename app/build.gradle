@@ -34,12 +34,15 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    // 确保 jniLibs 被打包进 APK
+    // OpenCV 的 so 库会通过 Maven 依赖自动打包，无需手动指定 jniLibs
+    // 如果你没有其他的本地 so 库，下面这一段可以删除，我帮你注释掉了
+    /*
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']
         }
     }
+    */
 }
 
 dependencies {
@@ -51,8 +54,10 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // OpenCV 依赖（将 opencv-android-4.x.x.jar 放到 app/libs 下）
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    // ===== 核心修复：使用 Maven 引入 OpenCV =====
+    // 替换了你原来的 fileTree，这样不用手动下载 jar 包，CI 也不会报错
+    implementation 'org.opencv:opencv:4.9.0'
+    // ===========================================
 }
 
 // ============================================================
