@@ -44,7 +44,7 @@ jobs:
             local output="$2"
             local max_retries=3
             local mirrors=(
-              "https://gh-proxy.com/${url#https://}"
+              "shturl.cc/tGHToOiPVfA${url#https://}"
               "https://ghproxy.cn/${url#https://}"
               "$url"
             )
@@ -78,13 +78,17 @@ jobs:
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
           echo "✅ so库复制完成"
 
+      # 【新增关键修复：给gradlew添加执行权限，解决126权限报错】
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       # 清理Gradle缓存，避免版本残留冲突
       - name: Clean Gradle Cache
         run: |
           rm -rf ~/.gradle/caches/
           rm -rf ~/.gradle/wrapper/
 
-      # 编译Debug包，使用项目自带gradle-wrapper，不再强制安装外部Gradle
+      # 编译Debug包
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
         env:
