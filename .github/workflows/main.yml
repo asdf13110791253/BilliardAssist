@@ -18,20 +18,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 重新生成完整可用Gradle 8.7 Wrapper，修复NoClassDefFoundError缺失类问题
-      - name: Rebuild Gradle Wrapper 8.7
-        run: |
-          rm -rf gradle gradlew gradle-8.7* gradle-8.7-bin.zip wrapper-tmp.zip
-          mkdir -p gradle/wrapper
-          # 使用gitee镜像下载完整gradle包，避免ghproxy返回html
-          wget --no-check-certificate https://mirrors.gitee.com/maven/gradle/gradle-8.7-all.zip -O wrapper-tmp.zip
-          unzip -q wrapper-tmp.zip "gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar"
-          cp gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
-          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-          echo "#!/bin/sh" > gradlew
-          echo "exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain \$@" >> gradlew
-          chmod +x gradlew
-          rm -rf gradle-8.7.0 wrapper-tmp.zip
+      # 官方Action自动管理完整Gradle8.7，不手动下载zip，彻底解决解压失败问题
+      - name: Setup Official Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+          validate-wrappers: false
 
       - name: Configure Android SDK Mirror
         run: |
@@ -84,6 +76,10 @@ jobs:
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
           echo "✅ so库复制完成"
+
+      # 统一授权脚本执行权限
+      - name: Grant gradlew execute permission
+        run: chmod +x gradlew
 
       - name: Build Release APK
         run: |
