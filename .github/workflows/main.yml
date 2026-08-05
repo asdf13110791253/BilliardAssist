@@ -11,31 +11,46 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      # 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 第一步：给脚本权限，在线修复完整Gradle Wrapper，解决类缺失报错
+      - name: Fix broken Gradle wrapper (no local PC needed)
+        run: |
+          chmod +x gradlew
+          # 在线下载完整合法gradle wrapper文件，补全缺失jar
+          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip -O gradle.zip
+          unzip -q gradle.zip
+          mkdir -p gradle/wrapper
+          cp gradle-8.7/lib/gradle-wrapper.jar gradle/wrapper/
+          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
+
+      # JDK环境
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 配置国内SDK镜像加速
+      # 国内SDK镜像加速
       - name: Configure Android SDK Mirror
         run: |
           mkdir -p ~/.android
           echo "count=0" > ~/.android/repositories.cfg
           echo "dl.google.com=https://mirrors.cloud.tencent.com/google/" >> $GITHUB_ENV
 
+      # 安装Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # 安装NDK和构建工具
       - name: Accept Licenses & Install NDK
         run: |
           yes | sdkmanager --licenses
           sdkmanager "ndk;26.1.10909125" "build-tools;33.0.2" "platforms;android-33"
 
-      # 下载OpenCV4.9.0预编译so库（多镜像+文件校验，解决404）
+      # 自动下载OpenCV so库
       - name: Download OpenCV so library
         run: |
           mkdir -p native_libs
@@ -44,7 +59,6 @@ jobs:
             local output="$2"
             local max_retries=3
             local mirrors=(
-              "shturl.cc/tGHToOiPVfA${url#https://}"
               "https://ghproxy.cn/${url#https://}"
               "$url"
             )
@@ -67,37 +81,24 @@ jobs:
             echo "❌ 所有镜像下载失败，终止流水线"
             exit 1
           }
-          # 下载opencv安卓SDK
           download_with_retry "https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip" native_libs/opencv.zip
           unzip -q native_libs/opencv.zip -d native_libs/opencv-sdk
-          # 自动创建jniLibs目录
           mkdir -p app/src/main/jniLibs/arm64-v8a
           mkdir -p app/src/main/jniLibs/armeabi-v7a
-          # 复制对应架构so文件
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
           echo "✅ so库复制完成"
 
-      # 【新增关键修复：给gradlew添加执行权限，解决126权限报错】
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      # 清理Gradle缓存，避免版本残留冲突
-      - name: Clean Gradle Cache
-        run: |
-          rm -rf ~/.gradle/caches/
-          rm -rf ~/.gradle/wrapper/
-
-      # 编译Debug包
+      # 执行打包编译
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
 
-      # 上传编译产物
+      # 打包完成自动上传APK，手机浏览器可直接下载
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: BilliardAssist-Debug
+          name: 灵喵台球-Debug安装包
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
