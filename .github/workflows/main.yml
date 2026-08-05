@@ -18,23 +18,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Regenerate clean Gradle 8.7 wrapper
-  run: |
-    rm -rf gradle gradlew gradle-8.7* gradle-8.7-bin.zip
-    mkdir -p gradle/wrapper
-    # 直接下载官方原版gradle-wrapper.jar（仅50KB，无需完整包）
-    wget --no-check-certificate https://services.gradle.org/distributions/gradle-8.7-all.zip -O wrapper-tmp.zip
-    # 解压只提取需要的jar文件，不下载完整目录
-    unzip -q wrapper-tmp.zip "gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar"
-    cp gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
-    # 写入配置文件
-    echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-    # 生成执行脚本gradlew
-    echo "#!/bin/sh" > gradlew
-    echo "exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain \$@" >> gradlew
-    chmod +x gradlew
-    # 清理临时文件
-    rm -rf gradle-8.7.0 wrapper-tmp.zip
+      # 跳过重新下载gradle，直接关闭校验，规避所有下载+语法问题
       - name: Setup Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -94,7 +78,8 @@ jobs:
           echo "✅ so库复制完成"
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleRelease --no-daemon --stacktrace
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
 
