@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     
-    <!-- Android 14+ 兼容性 -->
+    <!-- Android 13+ 通知权限 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"
         tools:targetApi="33" />
 
@@ -128,7 +128,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- ==================== 内容提供者（如需） ==================== -->
+        <!-- ==================== 内容提供者（关键修复） ==================== -->
         <!-- 文件共享（Android 7+ 文件访问） -->
         <provider
             android:name="androidx.core.content.FileProvider"
