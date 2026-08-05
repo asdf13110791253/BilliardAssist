@@ -16,26 +16,23 @@ jobs:
         run: |
           chmod +x gradlew
           mkdir -p gradle/wrapper
-          # 原始jar地址
-          JAR_URL="https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle-wrapper/gradle-wrapper.jar"
-          # 仅保留可用ghproxy.cn镜像，去掉失效mirror.ghproxy.com
-          echo "开始通过 ghproxy.cn 下载gradle-wrapper.jar"
-          wget --no-check-certificate --timeout=60 -O gradle/wrapper/gradle-wrapper.jar https://ghproxy.cn/${JAR_URL#https://}
-          # 校验文件大小，正常jar大于30KB
-          FILESIZE=$(stat -c%s gradle/wrapper/gradle-wrapper.jar)
-          if [ $FILESIZE -lt 30000 ]; then
-              echo "❌ 镜像下载异常，切换GitHub官方直链重试"
-              rm -f gradle/wrapper/gradle-wrapper.jar
-              wget --no-check-certificate --timeout=60 -O gradle/wrapper/gradle-wrapper.jar "$JAR_URL"
-          fi
-          # 二次校验，下载文件依旧异常直接终止任务
-          FILESIZE2=$(stat -c%s gradle/wrapper/gradle-wrapper.jar)
-          if [ $FILESIZE2 -lt 30000 ]; then
-              echo "❌ 所有渠道下载jar失败，流水线退出"
+          # Gitee镜像下载完整Gradle8.7安装包，避开raw.githubusercontent失效链接
+          wget --no-check-certificate --timeout=120 -O gradle-wrapper.zip https://gitee.com/mirrors/gradle/releases/download/v8.7/gradle-8.7-bin.zip
+          # 校验压缩包大小，合法包大于1MB
+          ZIP_SIZE=$(stat -c%s gradle-wrapper.zip)
+          if [ $ZIP_SIZE -lt 1000000 ]; then
+              echo "❌ Gitee镜像下载压缩包异常，任务终止"
               exit 1
           fi
-          # 写入gradle版本配置
+          # 仅解压wrapper所需文件
+          unzip -q gradle-wrapper.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar gradle-8.7/gradle/wrapper/gradle-wrapper.properties
+          # 复制到项目gradle目录
+          cp gradle-8.7/gradle/wrapper/* gradle/wrapper/
+          # 写入标准gradle下载地址
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
+          # 删除临时解压文件
+          rm -rf gradle-8.7 gradle-wrapper.zip
+          echo "✅ Gradle wrapper修复完成"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -64,7 +61,6 @@ jobs:
             local url="$1"
             local output="$2"
             local max_retries=3
-            # 只保留可用镜像，删除失效域名
             local mirrors=(
               "https://ghproxy.cn/${url#https://}"
               "$url"
