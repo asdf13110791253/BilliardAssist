@@ -1,181 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 商业版：深色台呢绿背景 -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F0F5">
+    android:background="#FF0D3311"
+    android:padding="24dp">
 
+    <!-- 顶部品牌标识 -->
+    <LinearLayout
+        android:id="@+id/layout_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 模拟台球图标（8号球） -->
+        <View
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ic_launcher_foreground"
+            android:layout_marginRight="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Billiard Pro"
+            android:textColor="#FFFFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+    </LinearLayout>
+
+    <!-- 核心卖点卡片（玻璃拟态效果） -->
+    <LinearLayout
+        android:id="@+id/card_features"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layout_header"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/rounded_bg_pro">
+        <!-- 圆角背景需在 drawable 新建 rounded_bg_pro.xml -->
+
+        <!-- 卖点 1：AI辅助 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:text="🤖"
+                android:textSize="20sp"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AI 智能辅助"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:layout_marginLeft="12dp"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+
+        <!-- 卖点 2：精准计费 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:text="💰"
+                android:textSize="20sp"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="精准桌台计费"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:layout_marginLeft="12dp"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+
+        <!-- 卖点 3：数据报表 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:text="📊"
+                android:textSize="20sp"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="经营数据报表"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:layout_marginLeft="12dp"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- VIP 会员标签 -->
+    <TextView
+        android:id="@+id/tv_vip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/card_features"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"
+        android:text="VIP 尊享 · 专业球房解决方案"
+        android:textColor="#FFD4A017"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1"/>
+
+    <!-- 底部操作按钮 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="36dp"
+        android:orientation="vertical">
 
-        <!-- 状态卡片 -->
-        <LinearLayout
+        <!-- 主按钮：立即体验（金色渐变感） -->
+        <Button
+            android:id="@+id/btn_start_pro"
             android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#FFD4A017"
+            android:text="立即开启专业模式"
+            android:textColor="#FF0D3311"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:stateListAnimator="@null"/>
+
+        <!-- 副按钮：隐私政策 -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_active"
-                android:padding="6dp 14dp"
-                android:text="已激活"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="灵喵"
-                android:textColor="#333333"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- 横版/竖版 按钮 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btn_horizontal"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:backgroundTint="#4A148C"
-                android:text="横版进"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btn_vertical"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:backgroundTint="#4A148C"
-                android:text="竖版进"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-        </LinearLayout>
-
-        <!-- 使用说明卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_gradient"
-            android:padding="20dp"
-            android:layout_marginTop="20dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="使用说明"
-                android:textColor="#1A237E"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="1. 如果截图权限按应用单独授权，请选择你当前正在运行的台球游戏。"
-                android:textColor="#333333"
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="2. 桌布请尽量精确对齐球桌内缘，辅助线会更稳定。"
-                android:textColor="#333333"
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="3. 系统设置相关入口已放在下方，需要时再手动处理即可。"
-                android:textColor="#333333"
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp" />
-        </LinearLayout>
-
-        <!-- 系统设置建议卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="20dp"
-            android:layout_marginTop="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="系统设置建议"
-                android:textColor="#1A237E"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="为避免悬浮服务被系统回收，建议你在需要时手动加入电池优化白名单或前往应用设置页。"
-                android:textColor="#555555"
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="16dp"
-                android:gravity="center">
-
-                <Button
-                    android:id="@+id/btn_battery"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:backgroundTint="#4A148C"
-                    android:text="电池优"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp" />
-
-                <Button
-                    android:id="@+id/btn_app_settings"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:backgroundTint="#4A148C"
-                    android:text="应用系"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp" />
-            </LinearLayout>
-        </LinearLayout>
-
+            android:text="《隐私政策》 | 《用户协议》"
+            android:textColor="#FF888888"
+            android:textSize="12sp"/>
     </LinearLayout>
-</ScrollView>
+
+</RelativeLayout>
