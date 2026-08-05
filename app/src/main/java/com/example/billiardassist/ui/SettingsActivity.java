@@ -1,6 +1,7 @@
 package com.example.billiardassist.ui;
 
 import android.content.SharedPreferences;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
@@ -10,6 +11,7 @@ import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.billiardassist.R;
 import com.example.billiardassist.service.FloatingService;
