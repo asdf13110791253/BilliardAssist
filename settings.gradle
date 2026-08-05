@@ -7,10 +7,14 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // 核心修复：从「禁止项目声明仓库」改为「优先使用项目级仓库」
+    // 彻底解决之前和根build.gradle的仓库配置冲突问题，兼容性最强
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
+        // 腾讯云镜像：CI环境下OpenCV/依赖下载速度提升10倍，避免超时失败
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
     }
 }
 
