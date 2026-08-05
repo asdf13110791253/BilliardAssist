@@ -18,23 +18,54 @@ jobs:
           java-version: '17'
           distribution: temurin
 
-      # 1. 修复项目本地gradle wrapper，强制锁定8.7，从根源杜绝9.x版本加载
+      # 修复项目Gradle Wrapper（修复解压失败问题，国内稳定镜像）
       - name: Fix project Gradle Wrapper Version
         run: |
           mkdir -p gradle/wrapper
-          # 重写properties，锁定8.7-bin
+          # 锁定Gradle 8.7版本
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-          # 下载8.7原版wrapper.jar，避免类缺失
-          wget --no-check-certificate https://ghproxy.cn/https://services.gradle.org/distributions/gradle-8.7-all.zip -O temp_gradle_all.zip
+
+          # 多镜像下载函数，过滤html垃圾文件
+          download_gradle() {
+            local urls=(
+              "https://mirrors.tencent.com/maven/gradle/gradle-8.7-all.zip"
+              "https://mirrors.aliyun.com/maven/gradle/gradle-8.7-all.zip"
+              "https://services.gradle.org/distributions/gradle-8.7-all.zip"
+            )
+            rm -f temp_gradle_all.zip
+            for u in "${urls[@]}"; do
+              echo "尝试下载Gradle包：$u"
+              if wget --timeout=120 --no-check-certificate -O temp_gradle_all.zip "$u"; then
+                local size=$(stat -c%s temp_gradle_all.zip)
+                # 合法压缩包大于100MB，过滤网页文件
+                if [ $size -gt 100000000 ]; then
+                  echo "压缩包下载成功，文件大小：$size"
+                  return 0
+                fi
+              fi
+              rm -f temp_gradle_all.zip
+            done
+            echo "所有镜像下载失败，终止流水线"
+            exit 1
+          }
+
+          download_gradle
+
+          # 只解压需要的wrapper.jar
           unzip -q temp_gradle_all.zip "gradle-8.7/gradle/wrapper/gradle-wrapper.jar"
           cp gradle-8.7/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
-          # 生成合法gradlew脚本
-          echo "#!/bin/sh" > gradlew
-          echo "exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain \$@" >> gradlew
+
+          # 生成标准gradlew脚本
+          cat > gradlew << 'EOF'
+          #!/bin/sh
+          exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"
+          EOF
           chmod +x gradlew
+
+          # 清理临时文件
           rm -rf gradle-8.7 temp_gradle_all.zip
 
-      # 2. 安装安卓SDK、NDK配套版本
+      # 安装安卓SDK、NDK配套版本
       - name: Install Android SDK Toolchain
         uses: android-actions/setup-android@v3
         with:
@@ -45,14 +76,14 @@ jobs:
       - name: Accept all SDK licenses
         run: yes | sdkmanager --licenses
 
-      # 3. 国内镜像配置
+      # 配置国内maven镜像加速依赖下载
       - name: Set Android maven mirror
         run: |
           mkdir -p ~/.android
           echo "dl.google.com=https://mirrors.cloud.tencent.com/android/" >> $GITHUB_ENV
           echo "maven.google.com=https://mirrors.cloud.tencent.com/maven-google/" >> $GITHUB_ENV
 
-      # 4. 下载OpenCV 4.9 so库，全新下载函数
+      # 下载OpenCV 4.9 so库，多镜像重试校验
       - name: Pull OpenCV native library
         run: |
           mkdir -p native_libs/jni_resource
@@ -68,18 +99,18 @@ jobs:
             rm -f "$save_file"
             for mirror in "${mirror_list[@]}"; do
               for ((loop=1; loop<=retry_max; loop++)); do
-                echo "Download attempt $loop, mirror source: $mirror"
+                echo "OpenCV下载 第$loop次，镜像源：$mirror"
                 if wget --timeout=120 --no-check-certificate -O "$save_file" "$mirror"; then
                   local f_size=$(stat -c%s "$save_file")
                   if [ $f_size -gt 120000 ]; then
-                    echo "Download complete, file size: $f_size bytes"
+                    echo "OpenCV包下载完成，文件大小：$f_size 字节"
                     return 0
                   fi
                 fi
                 rm -f "$save_file"
               done
             done
-            echo "All download mirrors failed, exit workflow"
+            echo "全部镜像下载OpenCV失败，退出流水线"
             exit 2
           }
           safe_fetch_lib "https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip" native_libs/opencv49.zip
@@ -89,14 +120,14 @@ jobs:
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
 
-      # 5. 使用项目修复后的gradlew打包，版本固定8.7，不会加载9.x
+      # 打包Release安装包
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
           GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      # 6. 上传安装包
+      # 上传编译好的APK
       - name: Upload compiled APK
         uses: actions/upload-artifact@v4
         with:
