@@ -18,21 +18,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 先删掉损坏的gradle wrapper，重新生成官方8.7原版
       - name: Regenerate clean Gradle 8.7 wrapper
         run: |
-          rm -rf gradle
+          rm -rf gradle gradle-8.7* gradle-8.7-bin.zip
           mkdir -p gradle/wrapper
-          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          wget --no-check-certificate https://ghproxy.cn/https://services.gradle.org/distributions/gradle-8.7-bin.zip
           unzip -q gradle-8.7-bin.zip
-          cp gradle-8.7/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
+          cp gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
           echo "#!/bin/sh" > gradlew
           echo "exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain \$@" >> gradlew
           chmod +x gradlew
-          rm -rf gradle-8.7 gradle-8.7-bin.zip
+          rm -rf gradle-8.7.0 gradle-8.7-bin.zip
 
-      # 关闭wrapper校验，正确参数 validate-wrappers: false
       - name: Setup Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
