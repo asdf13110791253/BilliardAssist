@@ -21,6 +21,7 @@ import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
+import android.view.View;
 import android.widget.ImageView;
 
 import androidx.core.app.NotificationCompat;
