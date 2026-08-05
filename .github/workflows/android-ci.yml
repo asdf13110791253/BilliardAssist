@@ -1,46 +1,52 @@
-name: Setup Android SDK
+steps:
+  # 1. 检出你的代码
+  - uses: actions/checkout@v4
 
-on:
-  workflow_dispatch:  # 允许在 GitHub Actions 页面手动运行
+  # 2. 设置 JDK 17 环境（Android 编译必需）
+  - name: Set up JDK 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: 17
 
-jobs:
-  setup-android:
-    runs-on: ubuntu-latest
+  # 3. 安装 Android SDK 和 NDK (核心修复步骤)
+  - name: Install Android SDK & NDK
+    run: |
+      set -euo pipefail
+      
+      # 定义 SDK 存放路径
+      SDK_ROOT="$GITHUB_WORKSPACE/android-sdk"
+      # 定义命令行工具版本
+      CMDLINE_VERSION="9477386"
+      
+      echo "正在创建 SDK 目录..."
+      mkdir -p "$SDK_ROOT/cmdline-tools"
 
-    steps:
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 17
+      echo "正在下载命令行工具..."
+      cd "$SDK_ROOT/cmdline-tools"
+      curl -sSL "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_VERSION}_latest.zip" -o cmdline.zip
+      
+      echo "正在解压..."
+      unzip -q cmdline.zip
+      
+      # 【最关键的一步】重命名目录，解决 "sdkmanager 找不到命令" 的问题
+      mv cmdline-tools latest
+      
+      echo "正在配置环境变量..."
+      export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+      
+      echo "正在接受许可证并安装组件..."
+      yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses > /dev/null
+      
+      # 安装编译所需的 SDK 组件和 NDK
+      sdkmanager --sdk_root="$SDK_ROOT" \
+        "platform-tools" \
+        "platforms;android-33" \
+        "build-tools;33.0.2" \
+        "ndk;23.1.7779620"
 
-      - name: Install Android SDK & NDK
-        run: |
-          set -euo pipefail
-
-          SDK_ROOT="/home/runner/work/_temp/android-sdk"
-          CMDLINE_VERSION="9477386"
-          CMDLINE_ZIP="commandlinetools-linux-${CMDLINE_VERSION}_latest.zip"
-
-          mkdir -p "$SDK_ROOT/cmdline-tools"
-          cd "$SDK_ROOT/cmdline-tools"
-
-          curl -sSL "https://dl.google.com/android/repository/${CMDLINE_ZIP}" -o cmdline.zip
-          unzip -q cmdline.zip
-          mv cmdline-tools latest
-
-          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-
-          which sdkmanager
-
-          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses > /dev/null
-
-          sdkmanager --sdk_root="$SDK_ROOT" \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;23.1.7779620"
-
-      - name: Verify installation
-        run: |
-          ls /home/runner/work/_temp/android-sdk
+  # 4. (可选) 验证一下是否安装成功
+  - name: Verify Installation
+    run: |
+      echo "✅ SDK 安装路径:"
+      ls -la $GITHUB_WORKSPACE/android-sdk/cmdline-tools/
