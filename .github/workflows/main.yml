@@ -18,54 +18,49 @@ jobs:
           java-version: '17'
           distribution: temurin
 
-      # 修复项目Gradle Wrapper（修复解压失败问题，国内稳定镜像）
+      # 修复Gradle Wrapper（已修正目录名+稳定下载源）
       - name: Fix project Gradle Wrapper Version
         run: |
           mkdir -p gradle/wrapper
-          # 锁定Gradle 8.7版本
+          # 锁定Gradle 8.7-bin版本
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
 
-          # 多镜像下载函数，过滤html垃圾文件
+          # 下载函数，ghproxy加速github资源，避开失效国内镜像
           download_gradle() {
-            local urls=(
-              "https://mirrors.tencent.com/maven/gradle/gradle-8.7-all.zip"
-              "https://mirrors.aliyun.com/maven/gradle/gradle-8.7-all.zip"
-              "https://services.gradle.org/distributions/gradle-8.7-all.zip"
-            )
-            rm -f temp_gradle_all.zip
-            for u in "${urls[@]}"; do
-              echo "尝试下载Gradle包：$u"
-              if wget --timeout=120 --no-check-certificate -O temp_gradle_all.zip "$u"; then
-                local size=$(stat -c%s temp_gradle_all.zip)
-                # 合法压缩包大于100MB，过滤网页文件
-                if [ $size -gt 100000000 ]; then
-                  echo "压缩包下载成功，文件大小：$size"
-                  return 0
-                fi
-              fi
+              local origin_url="https://services.gradle.org/distributions/gradle-8.7-all.zip"
+              local proxy_url="https://ghproxy.com/${origin_url#https://}"
               rm -f temp_gradle_all.zip
-            done
-            echo "所有镜像下载失败，终止流水线"
-            exit 1
+              echo "使用Github代理加速下载Gradle完整包"
+              # 优先代理
+              if wget --timeout=180 --no-check-certificate -O temp_gradle_all.zip "$proxy_url"; then
+                  local size=$(stat -c%s temp_gradle_all.zip)
+                  if [ $size -gt 200000000 ]; then
+                      echo "压缩包下载成功，文件大小：$size"
+                      return 0
+                  fi
+              fi
+              # 代理失败则直连github
+              echo "代理下载失败，切换github直连"
+              wget --timeout=180 --no-check-certificate -O temp_gradle_all.zip "$origin_url"
           }
 
           download_gradle
 
-          # 只解压需要的wrapper.jar
-          unzip -q temp_gradle_all.zip "gradle-8.7/gradle/wrapper/gradle-wrapper.jar"
-          cp gradle-8.7/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
+          # 修复核心：目录名改为 gradle-8.7.0
+          unzip -q temp_gradle_all.zip "gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar"
+          cp gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
 
-          # 生成标准gradlew脚本
+          # 生成标准gradlew启动脚本
           cat > gradlew << 'EOF'
-          #!/bin/sh
-          exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"
-          EOF
+#!/bin/sh
+exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"
+EOF
           chmod +x gradlew
 
           # 清理临时文件
-          rm -rf gradle-8.7 temp_gradle_all.zip
+          rm -rf gradle-8.7.0 temp_gradle_all.zip
 
-      # 安装安卓SDK、NDK配套版本
+      # 安装Android SDK&NDK
       - name: Install Android SDK Toolchain
         uses: android-actions/setup-android@v3
         with:
@@ -73,20 +68,13 @@ jobs:
           ndk: "26.1.10909125"
           build-tools: "34.0.0"
 
-      - name: Accept all SDK licenses
+      - name: Accept SDK Licenses
         run: yes | sdkmanager --licenses
 
-      # 配置国内maven镜像加速依赖下载
-      - name: Set Android maven mirror
-        run: |
-          mkdir -p ~/.android
-          echo "dl.google.com=https://mirrors.cloud.tencent.com/android/" >> $GITHUB_ENV
-          echo "maven.google.com=https://mirrors.cloud.tencent.com/maven-google/" >> $GITHUB_ENV
-
-      # 下载OpenCV 4.9 so库，多镜像重试校验
+      # 下载OpenCV so库
       - name: Pull OpenCV native library
         run: |
-          mkdir -p native_libs/jni_resource
+          mkdir -p native_libs
           safe_fetch_lib() {
             local target_url="$1"
             local save_file="$2"
@@ -120,17 +108,17 @@ jobs:
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
 
-      # 打包Release安装包
+      # 编译Release APK
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
           GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      # 上传编译好的APK
-      - name: Upload compiled APK
+      # 上传成品APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: LingMiao-V2-Release-Package
+          name: LingMiao-V2-APK
           path: app/build/outputs/apk/release/app-release.apk
           retention-days: 30
