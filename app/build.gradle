@@ -33,16 +33,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-
-    // OpenCV 的 so 库会通过 Maven 依赖自动打包，无需手动指定 jniLibs
-    // 如果你没有其他的本地 so 库，下面这一段可以删除，我帮你注释掉了
-    /*
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/jniLibs']
-        }
-    }
-    */
 }
 
 dependencies {
@@ -54,10 +44,10 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // ===== 核心修复：使用 Maven 引入 OpenCV =====
-    // 替换了你原来的 fileTree，这样不用手动下载 jar 包，CI 也不会报错
-    implementation 'org.opencv:opencv:4.9.0'
-    // ===========================================
+    // ===== 核心修复：修正为正确的 OpenCV Android 依赖坐标 =====
+    // 原来的 'org.opencv:opencv:4.9.0' 是错误的，无法在 Maven 中找到
+    implementation 'org.opencv:opencv-android:4.9.0'
+    // ========================================================
 }
 
 // ============================================================
