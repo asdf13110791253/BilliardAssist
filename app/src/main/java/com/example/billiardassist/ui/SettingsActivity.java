@@ -18,18 +18,6 @@ import com.example.billiardassist.service.FloatingService;
 
 /**
  * 设置面板
- * 对应截图：图11、图12
- *
- * 功能：
- * - 桌布选择（桌布1/2/3）
- * - 反射方案（反射补偿 / 镜像反射）
- * - 颜色选择（10种颜色）
- * - 补偿比例滑块
- * - 手动翻袋库数
- * - 辅助线粗细
- * - 显示蚂蚁线开关
- * - 吸附最近球开关
- * - 退出应用按钮
  */
 public class SettingsActivity extends AppCompatActivity {
 
@@ -106,23 +94,39 @@ public class SettingsActivity extends AppCompatActivity {
     // ===== 桌布选择 =====
     private void initTableClothUI() {
         rgTableCloth = findViewById(R.id.rg_table_cloth);
-        ((RadioButton) rgTableCloth.getChildAt(tableCloth)).setChecked(true);
-        rgTableCloth.setOnCheckedChangeListener((group, checkedId) -> {
-            int index = group.indexOfChild(group.findViewById(checkedId));
-            tableCloth = index;
-            saveSettings();
-        });
+        if (rgTableCloth != null) {
+            int childCount = rgTableCloth.getChildCount();
+            if (tableCloth >= 0 && tableCloth < childCount) {
+                android.view.View v = rgTableCloth.getChildAt(tableCloth);
+                if (v instanceof RadioButton) ((RadioButton) v).setChecked(true);
+            }
+            rgTableCloth.setOnCheckedChangeListener((group, checkedId) -> {
+                int index = group.indexOfChild(group.findViewById(checkedId));
+                if (index >= 0) {
+                    tableCloth = index;
+                    saveSettings();
+                }
+            });
+        }
     }
 
     // ===== 反射方案 =====
     private void initReflectUI() {
         rgReflect = findViewById(R.id.rg_reflect);
-        ((RadioButton) rgReflect.getChildAt(reflectMode)).setChecked(true);
-        rgReflect.setOnCheckedChangeListener((group, checkedId) -> {
-            int index = group.indexOfChild(group.findViewById(checkedId));
-            reflectMode = index;
-            saveSettings();
-        });
+        if (rgReflect != null) {
+            int childCount = rgReflect.getChildCount();
+            if (reflectMode >= 0 && reflectMode < childCount) {
+                android.view.View v = rgReflect.getChildAt(reflectMode);
+                if (v instanceof RadioButton) ((RadioButton) v).setChecked(true);
+            }
+            rgReflect.setOnCheckedChangeListener((group, checkedId) -> {
+                int index = group.indexOfChild(group.findViewById(checkedId));
+                if (index >= 0) {
+                    reflectMode = index;
+                    saveSettings();
+                }
+            });
+        }
     }
 
     // ===== 颜色选择（10个色块） =====
@@ -133,10 +137,11 @@ public class SettingsActivity extends AppCompatActivity {
                 R.id.btn_color_8, R.id.btn_color_9
         };
         for (int i = 0; i < btnIds.length; i++) {
-            Button btn = findViewById(btnIds[i]);
-            btn.setBackgroundColor(COLORS[i]);
+            android.view.View view = findViewById(btnIds[i]);
+            if (view == null) continue;
+            view.setBackgroundColor(COLORS[i]);
             final int color = COLORS[i];
-            btn.setOnClickListener(v -> {
+            view.setOnClickListener(v -> {
                 selectedColor = color;
                 saveSettings();
                 Toast.makeText(this, "颜色已切换", Toast.LENGTH_SHORT).show();
@@ -149,47 +154,53 @@ public class SettingsActivity extends AppCompatActivity {
         // 补偿比例 0~50，显示 0.00~0.50
         tvCompValue = findViewById(R.id.tv_comp_value);
         seekComp = findViewById(R.id.seek_comp);
-        seekComp.setMax(50);
-        seekComp.setProgress(compensationRatio);
-        tvCompValue.setText(String.format("%.2f", compensationRatio / 100.0));
-        seekComp.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                compensationRatio = p;
-                tvCompValue.setText(String.format("%.2f", p / 100.0));
-            }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-        });
+        if (seekComp != null && tvCompValue != null) {
+            seekComp.setMax(50);
+            seekComp.setProgress(compensationRatio);
+            tvCompValue.setText(String.format("%.2f", compensationRatio / 100.0));
+            seekComp.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                    compensationRatio = p;
+                    tvCompValue.setText(String.format("%.2f", p / 100.0));
+                }
+                @Override public void onStartTrackingTouch(SeekBar s) {}
+                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
+            });
+        }
 
         // 翻袋库数 1~5
         tvBankValue = findViewById(R.id.tv_bank_value);
         seekBank = findViewById(R.id.seek_bank);
-        seekBank.setMax(5);
-        seekBank.setProgress(bankCount);
-        tvBankValue.setText(String.valueOf(bankCount));
-        seekBank.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                bankCount = Math.max(1, p);
-                tvBankValue.setText(String.valueOf(bankCount));
-            }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-        });
+        if (seekBank != null && tvBankValue != null) {
+            seekBank.setMax(5);
+            seekBank.setProgress(bankCount);
+            tvBankValue.setText(String.valueOf(bankCount));
+            seekBank.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                    bankCount = Math.max(1, p);
+                    tvBankValue.setText(String.valueOf(bankCount));
+                }
+                @Override public void onStartTrackingTouch(SeekBar s) {}
+                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
+            });
+        }
 
         // 线粗细 1~20，步长 0.5
         tvThicknessValue = findViewById(R.id.tv_thickness_value);
         seekThickness = findViewById(R.id.seek_thickness);
-        seekThickness.setMax(40);
-        seekThickness.setProgress((int) (lineThickness * 2));
-        tvThicknessValue.setText(String.format("%.1f", lineThickness));
-        seekThickness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                lineThickness = p / 2.0f;
-                tvThicknessValue.setText(String.format("%.1f", lineThickness));
-            }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-        });
+        if (seekThickness != null && tvThicknessValue != null) {
+            seekThickness.setMax(40);
+            seekThickness.setProgress((int) (lineThickness * 2));
+            tvThicknessValue.setText(String.format("%.1f", lineThickness));
+            seekThickness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                    lineThickness = p / 2.0f;
+                    tvThicknessValue.setText(String.format("%.1f", lineThickness));
+                }
+                @Override public void onStartTrackingTouch(SeekBar s) {}
+                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
+            });
+        }
     }
 
     // ===== 两个开关 =====
@@ -197,28 +208,33 @@ public class SettingsActivity extends AppCompatActivity {
         switchAntLine = findViewById(R.id.switch_ant_line);
         switchAdsorb = findViewById(R.id.switch_adsorb);
 
-        switchAntLine.setChecked(antLineEnabled);
-        switchAdsorb.setChecked(adsorbEnabled);
-
-        switchAntLine.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            antLineEnabled = isChecked;
-            saveSettings();
-        });
-        switchAdsorb.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            adsorbEnabled = isChecked;
-            saveSettings();
-        });
+        if (switchAntLine != null) {
+            switchAntLine.setChecked(antLineEnabled);
+            switchAntLine.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                antLineEnabled = isChecked;
+                saveSettings();
+            });
+        }
+        if (switchAdsorb != null) {
+            switchAdsorb.setChecked(adsorbEnabled);
+            switchAdsorb.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                adsorbEnabled = isChecked;
+                saveSettings();
+            });
+        }
     }
 
     // ===== 退出应用 =====
     private void initExitButton() {
         btnExit = findViewById(R.id.btn_exit_app);
-        btnExit.setOnClickListener(v -> {
-            // 停止所有服务
-            stopService(new Intent(this, com.example.billiardassist.service.FloatingService.class));
-            stopService(new Intent(this, com.example.billiardassist.service.CaptureService.class));
-            finishAffinity(); // 关闭所有 Activity
-        });
+        if (btnExit != null) {
+            btnExit.setOnClickListener(v -> {
+                // 停止所有服务
+                stopService(new Intent(this, com.example.billiardassist.service.FloatingService.class));
+                stopService(new Intent(this, com.example.billiardassist.service.CaptureService.class));
+                finishAffinity(); // 关闭所有 Activity
+            });
+        }
     }
 
     @Override
