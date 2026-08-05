@@ -23,7 +23,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
-          ndk: 'r23b' # 如需其它 NDK 版本（r21e/r25 等），请修改此处
+          ndk: 'r23b' # 如需其它 NDK 版本请修改
           arch: x86_64
 
       - name: Write local.properties with sdk & ndk paths
