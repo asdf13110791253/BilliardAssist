@@ -2,10 +2,11 @@ package com.example.billiardassist.ai;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import com.example.billiardassist.AimDetector;
+import androidx.annotation.NonNull;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -46,16 +47,15 @@ public class AimProcessor {
 
     /**
      * 构造函数
-     * @param templateBitmap 瞄准环模板图
+     * @param templateBitmap 瞄准环模板图（必须为ARGB_8888格式）
      */
     public AimProcessor(Bitmap templateBitmap) {
-        if (templateBitmap != null) {
+        if (templateBitmap != null && !templateBitmap.isRecycled()) {
             this.aimDetector = new AimDetector(templateBitmap);
         }
     }
 
     // ===== 设置参数 =====
-
     public void setScheme(int scheme) {
         if (scheme < 0 || scheme > 7) return;
         this.currentScheme = scheme;
@@ -86,25 +86,19 @@ public class AimProcessor {
     // ===== 核心处理 =====
 
     /**
-     * 处理一帧截图，返回瞄准中心点
+     * 处理一帧截图，返回瞄准中心点（⚠️ 需在子线程调用，避免阻塞UI）
      */
-    public Point processFrame(Bitmap screenBitmap) {
-        if (screenBitmap == null || aimDetector == null) return null;
+    public Point processFrame(@NonNull Bitmap screenBitmap) {
+        if (screenBitmap.isRecycled() || aimDetector == null) return null;
         return aimDetector.detectAimCenter(screenBitmap);
     }
 
     /**
      * 计算辅助线角度（角度补偿模式）
-     * @param cueX 白球X
-     * @param cueY 白球Y
-     * @param targetX 目标球X
-     * @param targetY 目标球Y
-     * @param pocketX 袋口X
-     * @param pocketY 袋口Y
      * @return 辅助线终点坐标 [endX, endY]
      */
     public double[] calculateAimLine(float cueX, float cueY, float targetX, float targetY,
-                                      float pocketX, float pocketY) {
+                                     float pocketX, float pocketY) {
         double dx = targetX - cueX;
         double dy = targetY - cueY;
         double dist = Math.sqrt(dx * dx + dy * dy);
@@ -115,6 +109,7 @@ public class AimProcessor {
             double totalDx = pocketX - cueX;
             double totalDy = pocketY - cueY;
             double len = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
+            if (len < 1) return new double[]{cueX, cueY};
             return new double[]{cueX + totalDx / len * 2000, cueY + totalDy / len * 2000};
         } else {
             // 角度补偿模式
@@ -129,11 +124,14 @@ public class AimProcessor {
 
     /**
      * 计算翻袋路径（库边镜像法）
+     * @param tableBounds 球桌边界 [left, top, right, bottom]
+     * @param bankCount 翻袋次数
      */
     public double[] calculateBankShot(float cueX, float cueY, float targetX, float targetY,
                                       float pocketX, float pocketY,
-                                      float[] tableBounds, int bankCount) {
-        // 对袋口做镜像
+                                      @NonNull float[] tableBounds, int bankCount) {
+        // 边界校验，避免数组越界
+        if (tableBounds.length < 4) return calculateAimLine(cueX, cueY, targetX, targetY, pocketX, pocketY);
         float left = tableBounds[0], top = tableBounds[1];
         float right = tableBounds[2], bottom = tableBounds[3];
 
@@ -143,30 +141,34 @@ public class AimProcessor {
 
         if (bankCount >= 1) {
             // 上下镜像
-            checkMirror(pocketX, 2 * top - pocketY, targetX, targetY);
-            checkMirror(pocketX, 2 * bottom - pocketY, targetX, targetY);
+            bestDist = checkMirror(pocketX, 2 * top - pocketY, targetX, targetY, bestDist);
+            bestDist = checkMirror(pocketX, 2 * bottom - pocketY, targetX, targetY, bestDist);
             // 左右镜像
-            checkMirror(2 * left - pocketX, pocketY, targetX, targetY);
-            checkMirror(2 * right - pocketX, pocketY, targetX, targetY);
+            bestDist = checkMirror(2 * left - pocketX, pocketY, targetX, targetY, bestDist);
+            bestDist = checkMirror(2 * right - pocketX, pocketY, targetX, targetY, bestDist);
         }
 
-        // 简化：返回第一个镜像方向
         return calculateAimLine(cueX, cueY, targetX, targetY,
                 (float) (targetX + bestDx), (float) (targetY + bestDy));
     }
 
-    private void checkMirror(float mx, float my, float tx, float ty) {
-        // 留作扩展：选最近的镜像袋口
+    /**
+     * 镜像距离校验（返回最优镜像距离）
+     */
+    private double checkMirror(float mx, float my, float tx, float ty, double currentBest) {
+        double dx = mx - tx;
+        double dy = my - ty;
+        double dist = Math.sqrt(dx * dx + dy * dy);
+        return Math.min(currentBest, dist);
     }
 
     // ===== 工具方法 =====
-
     private int clamp(int val, int min, int max) {
         return Math.max(min, Math.min(max, val));
     }
 
     /**
-     * 释放资源
+     * 释放资源（⚠️ 退出时必须调用，避免内存泄漏）
      */
     public void release() {
         if (aimDetector != null) {
@@ -178,25 +180,38 @@ public class AimProcessor {
     /**
      * 应用 HSV 阈值过滤（用于白球/目标球检测）
      */
-    public Bitmap applyHSVFilter(Bitmap input) {
-        if (input == null) return null;
-        Mat src = new Mat();
-        Utils.bitmapToMat(input, src);
-        Mat hsv = new Mat();
-        Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGRA2HSV);
+    public Bitmap applyHSVFilter(@NonNull Bitmap input) {
+        if (input.isRecycled() || input.getWidth() <= 0 || input.getHeight() <= 0) {
+            return input;
+        }
+        Mat src = null, hsv = null, mask = null, result = null;
+        try {
+            // 转换为OpenCV可用的Mat格式
+            src = new Mat();
+            Utils.bitmapToMat(input, src);
+            
+            // 转HSV色彩空间
+            hsv = new Mat();
+            Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGRA2HSV);
 
-        // V 通道阈值
-        Mat mask = new Mat();
-        Core.inRange(hsv, new org.opencv.core.Scalar(0, 0, vValue),
-                new org.opencv.core.Scalar(180, 255, 255), mask);
+            // V通道阈值过滤（H:0-180, S:0-255, V:0-255）
+            mask = new Mat();
+            Core.inRange(hsv, new Scalar(0, 0, vValue), new Scalar(180, 255, 255), mask);
 
-        Mat result = new Mat();
-        src.copyTo(result, mask);
+            // 提取符合阈值的区域
+            result = new Mat();
+            src.copyTo(result, mask);
 
-        Bitmap out = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(result, out);
-
-        src.release(); hsv.release(); mask.release(); result.release();
-        return out;
+            // 转回Bitmap
+            Bitmap out = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(result, out);
+            return out;
+        } finally {
+            // 确保Mat资源释放，避免内存泄漏
+            if (src != null) src.release();
+            if (hsv != null) hsv.release();
+            if (mask != null) mask.release();
+            if (result != null) result.release();
+        }
     }
 }
