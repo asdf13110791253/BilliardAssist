@@ -1,17 +1,19 @@
 name: Android CI
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -19,20 +21,34 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK & NDK
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          ndk: 'r23b' # 如需其它 NDK 版本（r21e/r25 等），请修改此处
-          arch: x86_64
-
-      - name: Write local.properties with sdk & ndk paths
+      - name: Install Android command-line tools and required packages
+        # install into runner.temp to avoid permission issues
         run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          echo "ndk.dir=$ANDROID_NDK_HOME" >> local.properties
+          set -euo pipefail
+          SDK_ROOT="${{ runner.temp }}/android-sdk"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+          cd "$SDK_ROOT/cmdline-tools"
+          curl -sSL "https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip" -o cmdline.zip
+          unzip -q cmdline.zip -d "$SDK_ROOT/cmdline-tools/latest"
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses >/dev/null
+          sdkmanager --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;23.1.7779620"
+
+      - name: Set Android SDK/NDK env vars
+        run: |
+          echo "ANDROID_SDK_ROOT=${{ runner.temp }}/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=${{ runner.temp }}/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=${{ runner.temp }}/android-sdk/ndk/23.1.7779620" >> $GITHUB_ENV
+          echo "${{ runner.temp }}/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "${{ runner.temp }}/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=${{ runner.temp }}/android-sdk" > local.properties
+          echo "ndk.dir=${{ runner.temp }}/android-sdk/ndk/23.1.7779620" >> local.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Build (assembleDebug)
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
