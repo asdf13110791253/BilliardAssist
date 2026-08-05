@@ -4,8 +4,7 @@ plugins {
 
 android {
     namespace 'com.example.billiardassist'
-    // 关键：保持33，因为你的 AGP 7.4.2 最高支持到33
-    // 升级到34/35需要同时升级 AGP 和 Gradle，目前没必要
+    // 锁定 33：AGP 7.4.2 最高支持 33，升级需同步升级 AGP + Gradle
     compileSdk 33
 
     defaultConfig {
@@ -15,31 +14,36 @@ android {
         versionCode 1
         versionName "1.0"
 
-        // OpenCV 需要 Neon 支持
+        // OpenCV 架构过滤
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 
-        // CI 环境专用：指定 NDK 路径
+        // CI 环境显式指定 NDK 路径（非常重要）
         ndkPath System.getenv("ANDROID_NDK_HOME")
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            debuggable false // 正式包禁止调试，更安全
+            debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            // 禁止调试版本生成崩溃分析符号，加快 CI 构建
+            ext.enableCrashlytics = false
         }
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-        // 开启脱糖：支持 Java 8+ API 在老设备上运行
+        // 脱糖：让 Java 8+ API 在低版本 Android 可用
         coreLibraryDesugaringEnabled true
     }
 
-    // 排除重复文件，避免打包冲突（非常重要）
+    // 解决 META-INF 冲突（OpenCV / AndroidX 常见）
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -48,50 +52,54 @@ android {
             excludes += 'META-INF/LICENSE'
             excludes += 'META-INF/LICENSE.txt'
             excludes += 'META-INF/NOTICE.txt'
+            excludes += 'META-INF/*.kotlin_module'
         }
     }
 
-    // 优化编译速度，忽略非必要检查
+    // CI 友好型 Lint 配置
     lintOptions {
         checkReleaseBuilds false
         abortOnError false
         disable 'MissingTranslation', 'ExtraTranslation'
+        // 禁止 Lint 在 CI 中占用大量内存
+        htmlReport false
+        xmlReport false
     }
 }
 
 dependencies {
-    // 核心脱糖库：解决 Java 17 特性在低版本 Android 的兼容问题
+    // ===== 核心脱糖库（Java 17 兼容关键）=====
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
-    // 显式引入 Kotlin 标准库，防止隐式依赖冲突
+    // ===== Kotlin 基础（强制统一版本）=====
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
 
-    // 更新到较新的稳定版，修复已知 Bug
+    // ===== AndroidX（降级到兼容 compileSdk 33 的版本）=====
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core:1.12.0' // 升级，支持新权限
-    implementation 'com.google.android.material:material:1.11.0' // 升级，适配新系统UI
+    implementation 'androidx.core:core:1.10.1'          // ✅ 兼容 33
+    implementation 'androidx.core:core-ktx:1.10.1'       // ✅ 兼容 33
+    implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // ===== 正确的 OpenCV 依赖（已验证可用）=====
+    // ===== OpenCV（已验证稳定）=====
     implementation 'org.opencv:opencv:4.9.0'
-    // ===========================================
 }
 
 // ============================================================
-// 强制统一 Kotlin 版本，解决 Duplicate Class 错误
+// 强制统一 Kotlin 版本（根治 Duplicate Class）
 // ============================================================
 configurations.all {
     resolutionStrategy {
-        // 强制使用 1.8.10
+        // 强制锁定 Kotlin 版本
         force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10'
 
-        // 移除旧的三方库自带的 Kotlin 依赖，防止冲突
+        // 替换所有第三方库自带的 Kotlin 依赖
         eachDependency { details ->
             if (details.requested.group == 'org.jetbrains.kotlin') {
                 if (details.requested.name.startsWith('kotlin-stdlib')) {
-                    details.useTarget 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
+                    details.useTarget "org.jetbrains.kotlin:kotlin-stdlib:1.8.10"
                 }
             }
         }
