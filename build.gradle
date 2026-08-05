@@ -1,19 +1,24 @@
 // Top-level build file
-// 适配 Gradle 7.5 + Android Gradle Plugin 7.4.2，符合Gradle 7+官方规范
+// 规范：Gradle 7.5 + Android Gradle Plugin 7.4.2
+// 说明：仓库已统一在 settings.gradle 中管理，此处不再重复声明
+
 buildscript {
     repositories {
+        // CI / 国内环境建议顺序：优先国内镜像
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/content/groups/public/' }
         google()
         mavenCentral()
     }
     dependencies {
-        // 对应你当前CI环境锁定的AGP版本，无需修改
+        // 锁定 AGP 版本，避免 CI 自动升级导致 compileSdk 冲突
         classpath 'com.android.tools.build:gradle:7.4.2'
+
+        // 如你后续启用 Kotlin，请取消下一行注释并保持版本一致
+        // classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22"
     }
 }
 
-// 已彻底删除allprojects代码块：避免和settings.gradle的dependencyResolutionManagement配置冲突
-// 所有依赖（含OpenCV）的仓库地址已统一在settings.gradle中管理，CI环境下载更稳定
-
+// 清理构建目录
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
