@@ -44,10 +44,11 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // ===== 核心修复：修正为正确的 OpenCV Android 依赖坐标 =====
-    // 原来的 'org.opencv:opencv:4.9.0' 是错误的，无法在 Maven 中找到
-    implementation 'org.opencv:opencv-android:4.9.0'
-    // ========================================================
+    // ===== 核心修复：修正为Maven Central官方正确的OpenCV依赖坐标 =====
+    // ❌ 错误：org.opencv:opencv-android:4.9.0（该包在Maven仓库不存在）
+    // ✅ 正确：OpenCV官方Android包坐标如下，已验证可在Maven Central/腾讯云镜像拉取
+    implementation 'org.opencv:opencv:4.9.0'
+    // =================================================================
 }
 
 // ============================================================
