@@ -9,91 +9,91 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Pull full project source
+      - name: Pull full project source files
         uses: actions/checkout@v4
 
-      - name: Install JDK 17
+      - name: Install JDK 17 Temurin
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # 全局安装Gradle8.7，不依赖项目内gradlew/wrapper，彻底解决wrapper类缺失
-      - name: Global install Gradle 8.7
+      # 锁定全局Gradle版本8.7，和项目AGP版本严格匹配，规避9.x版本API断层
+      - name: Fixed Gradle 8.7 Global Install
         run: |
-          sudo apt update -y
-          sudo apt install wget unzip -y
-          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle-bin.zip
-          sudo unzip -q /tmp/gradle-bin.zip -d /opt/
-          sudo ln -s /opt/gradle-8.7 /opt/gradle
-          echo "PATH=$PATH:/opt/gradle/bin" >> $GITHUB_ENV
+          sudo apt update && sudo apt install -y wget unzip
+          wget --no-check-certificate https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle-stable.zip
+          sudo rm -rf /opt/gradle-*
+          sudo unzip -q /tmp/gradle-stable.zip -d /opt/
+          echo "PATH=$PATH:/opt/gradle-8.7/bin" >> $GITHUB_ENV
+          gradle --version
 
-      # 安卓依赖国内镜像配置
-      - name: Config Android mirror source
+      # 安卓国内镜像源统一配置
+      - name: Configure Android Mirror Repository
         run: |
           mkdir -p ~/.android
           echo "dl.google.com=https://mirrors.cloud.tencent.com/android/" >> $GITHUB_ENV
           echo "maven.google.com=https://mirrors.cloud.tencent.com/maven-google/" >> $GITHUB_ENV
 
-      # 一键安装SDK、NDK、构建工具
-      - name: Deploy Android SDK & NDK
+      # 配套项目compileSdk34，安装对应SDK、NDK、构建工具
+      - name: Deploy Android SDK Toolchain
         uses: android-actions/setup-android@v3
         with:
           api-level: 34
           ndk: "26.1.10909125"
           build-tools: "34.0.0"
 
-      - name: Accept all SDK license agreements
+      - name: Accept all SDK license terms
         run: yes | sdkmanager --licenses
 
-      # 安全下载OpenCV库，多重镜像校验
-      - name: Download OpenCV 4.9 native lib
+      # 安全下载OpenCV预编译so库，多重镜像+文件大小校验
+      - name: Fetch OpenCV 4.9.0 Native Library
         run: |
-          mkdir -p native_libs/jni
-          safe_fetch() {
-            local source_url="$1"
-            local save_file="$2"
-            local retry_max=3
-            local proxy_group=(
-              "https://ghproxy.com/${source_url#https://}"
-              "https://ghproxy.cn/${source_url#https://}"
-              "$source_url"
+          mkdir -p native_libs/jni_storage
+          safe_download_task() {
+            local target_url="$1"
+            local save_file_path="$2"
+            local max_retry_times=3
+            local mirror_list=(
+              "https://ghproxy.com/${target_url#https://}"
+              "https://ghproxy.cn/${target_url#https://}"
+              "$target_url"
             )
-            rm -f "$save_file"
-            for proxy_addr in "${proxy_group[@]}"; do
-              for ((loop=1; loop<=retry_max; loop++)); do
-                echo "Download attempt $loop, proxy: $proxy_addr"
-                if wget --timeout=120 --no-check-certificate -O "$save_file" "$proxy_addr"; then
-                  local f_size=$(stat -c%s "$save_file")
-                  if [ $f_size -gt 120000 ]; then
-                    echo "File download success, size: $f_size bytes"
+            rm -f "$save_file_path"
+            for single_mirror in "${mirror_list[@]}"; do
+              for ((t=1; t<=max_retry_times; t++)); do
+                echo "Download attempt $t, mirror source: $single_mirror"
+                if wget --timeout=120 --no-check-certificate -O "$save_file_path" "$single_mirror"; then
+                  local file_byte_size=$(stat -c%s "$save_file_path")
+                  if [ $file_byte_size -gt 150000 ]; then
+                    echo "File download completed, file total bytes: $file_byte_size"
                     return 0
                   fi
                 fi
-                rm -f "$save_file"
+                rm -f "$save_file_path"
               done
             done
-            echo "All download proxy failed, stop workflow"
+            echo "All download mirror sources failed, terminate workflow execution"
             exit 2
           }
-          safe_fetch "https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip" native_libs/opencv.zip
-          unzip -q native_libs/opencv.zip -d native_libs/opencv-sdk
+          safe_download_task "https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip" native_libs/opencv490.zip
+          unzip -q native_libs/opencv490.zip -d native_libs/opencv_extract
           mkdir -p app/src/main/jniLibs/arm64-v8a
           mkdir -p app/src/main/jniLibs/armeabi-v7a
-          cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
-          cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
+          cp native_libs/opencv_extract/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
+          cp native_libs/opencv_extract/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
 
-      # 全局gradle命令打包，不再使用./gradlew（根治wrapper缺失类报错）
-      - name: Build Release APK with global Gradle
+      # 全局Gradle8.7打包，版本匹配AGP，消除API方法不存在异常
+      - name: Compile Release Installation Package
         run: gradle assembleRelease --stacktrace
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
           GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      # 上传编译好的安装包
-      - name: Upload compiled APK artifact
+      # 上传编译完成的APK产物
+      - name: Export Compiled APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LingMiao-V2.0-Final-Release
+          name: LingMiao-V2.0-Stable-Release
           path: app/build/outputs/apk/release/app-release.apk
           retention-days: 30
