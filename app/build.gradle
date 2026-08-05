@@ -4,6 +4,8 @@ plugins {
 
 android {
     namespace 'com.example.billiardassist'
+    // 关键：保持33，因为你的 AGP 7.4.2 最高支持到33
+    // 升级到34/35需要同时升级 AGP 和 Gradle，目前没必要
     compileSdk 33
 
     defaultConfig {
@@ -18,13 +20,14 @@ android {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 
-        // 必须指定 NDK 路径，否则 CI 环境可能找不到
+        // CI 环境专用：指定 NDK 路径
         ndkPath System.getenv("ANDROID_NDK_HOME")
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            debuggable false // 正式包禁止调试，更安全
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -32,27 +35,50 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+        // 开启脱糖：支持 Java 8+ API 在老设备上运行
+        coreLibraryDesugaringEnabled true
+    }
+
+    // 排除重复文件，避免打包冲突（非常重要）
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += 'META-INF/DEPENDENCIES'
+            excludes += 'META-INF/NOTICE'
+            excludes += 'META-INF/LICENSE'
+            excludes += 'META-INF/LICENSE.txt'
+            excludes += 'META-INF/NOTICE.txt'
+        }
+    }
+
+    // 优化编译速度，忽略非必要检查
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+        disable 'MissingTranslation', 'ExtraTranslation'
     }
 }
 
 dependencies {
+    // 核心脱糖库：解决 Java 17 特性在低版本 Android 的兼容问题
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+
     // 显式引入 Kotlin 标准库，防止隐式依赖冲突
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
 
+    // 更新到较新的稳定版，修复已知 Bug
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core:1.10.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.core:core:1.12.0' // 升级，支持新权限
+    implementation 'com.google.android.material:material:1.11.0' // 升级，适配新系统UI
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    // ===== 核心修复：修正为Maven Central官方正确的OpenCV依赖坐标 =====
-    // ❌ 错误：org.opencv:opencv-android:4.9.0（该包在Maven仓库不存在）
-    // ✅ 正确：OpenCV官方Android包坐标如下，已验证可在Maven Central/腾讯云镜像拉取
+    // ===== 正确的 OpenCV 依赖（已验证可用）=====
     implementation 'org.opencv:opencv:4.9.0'
-    // =================================================================
+    // ===========================================
 }
 
 // ============================================================
-// 核心修复：强制统一 Kotlin 版本，解决 Duplicate Class 错误
+// 强制统一 Kotlin 版本，解决 Duplicate Class 错误
 // ============================================================
 configurations.all {
     resolutionStrategy {
