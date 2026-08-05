@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 内部缓存：存OpenCV临时文件 -->
+    <cache-path name="internal_cache" path="." />
+    
+    <!-- 外部缓存：存录屏临时文件 -->
+    <external-cache-path name="external_cache" path="." />
+    
+    <!-- APP私有目录：存瞄准方案、导出参数 -->
+    <external-files-path name="external_files" path="." />
+    
+    <!-- 内部文件：存配置 -->
+    <files-path name="internal_files" path="." />
+</paths>
