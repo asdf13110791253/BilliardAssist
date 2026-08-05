@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 商业版：深色台呢绿背景 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,11 +15,11 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <!-- 模拟台球图标（8号球） -->
-        <View
+        <!-- 换成默认启动图标（所有项目都有） -->
+        <ImageView
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@drawable/ic_launcher_foreground"
+            android:src="@mipmap/ic_launcher"
             android:layout_marginRight="12dp"/>
 
         <TextView
@@ -33,7 +32,7 @@
             android:letterSpacing="0.05"/>
     </LinearLayout>
 
-    <!-- 核心卖点卡片（玻璃拟态效果） -->
+    <!-- 核心卖点卡片（用半透明纯色代替缺失的圆角背景） -->
     <LinearLayout
         android:id="@+id/card_features"
         android:layout_width="match_parent"
@@ -42,8 +41,7 @@
         android:layout_marginTop="40dp"
         android:orientation="vertical"
         android:padding="24dp"
-        android:background="@drawable/rounded_bg_pro">
-        <!-- 圆角背景需在 drawable 新建 rounded_bg_pro.xml -->
+        android:background="#1AFFFFFF"><!-- 半透明白色，模拟玻璃效果 -->
 
         <!-- 卖点 1：AI辅助 -->
         <LinearLayout
@@ -133,7 +131,7 @@
         android:layout_marginBottom="36dp"
         android:orientation="vertical">
 
-        <!-- 主按钮：立即体验（金色渐变感） -->
+        <!-- 主按钮：立即体验 -->
         <Button
             android:id="@+id/btn_start_pro"
             android:layout_width="match_parent"
@@ -142,8 +140,7 @@
             android:text="立即开启专业模式"
             android:textColor="#FF0D3311"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:stateListAnimator="@null"/>
+            android:textStyle="bold"/>
 
         <!-- 副按钮：隐私政策 -->
         <TextView
