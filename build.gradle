@@ -13,8 +13,8 @@ buildscript {
         // 锁定 AGP 版本，避免 CI 自动升级导致 compileSdk 冲突
         classpath 'com.android.tools.build:gradle:7.4.2'
 
-        // 如你后续启用 Kotlin，请取消下一行注释并保持版本一致
-        // classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22"
+        // 如果启用 Kotlin，请启用下一行并保持版本一致
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22"
     }
 }
 
