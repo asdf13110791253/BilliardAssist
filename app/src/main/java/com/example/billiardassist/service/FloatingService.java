@@ -11,6 +11,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -29,7 +31,7 @@ import com.example.billiardassist.R;
 /**
  * 悬浮窗服务 - 负责在屏幕上绘制辅助线
  * 对应截图：图3、图16（启动悬浮辅助界面）
- * ✅ 已修复：前台服务崩溃问题/Java语法错误/内存泄漏风险
+ * ✅ 已修复：前台服务崩溃问题/Java语法错误/内存泄漏风险/Android 15兼容性
  */
 public class FloatingService extends Service {
 
@@ -129,7 +131,6 @@ public class FloatingService extends Service {
         
         // 兼容新旧版本获取屏幕尺寸的方式
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            windowManager.getCurrentWindowMetrics().getBounds();
             screenWidth = windowManager.getCurrentWindowMetrics().getBounds().width();
             screenHeight = windowManager.getCurrentWindowMetrics().getBounds().height();
         } else {
@@ -189,16 +190,18 @@ public class FloatingService extends Service {
     public void drawGuideLines(int cx, int cy) {
         if (overlayView == null || cx < 0 || cy < 0) return;
 
-        // 回收旧Bitmap，避免内存泄漏
-        Bitmap oldBitmap = ((BitmapDrawable) overlayView.getDrawable())?.getBitmap();
-        if (oldBitmap != null && !oldBitmap.isRecycled()) {
-            oldBitmap.recycle();
+        // 回收旧Bitmap，避免内存泄漏（修复Java语法错误）
+        if (overlayView.getDrawable() instanceof BitmapDrawable) {
+            Bitmap oldBitmap = ((BitmapDrawable) overlayView.getDrawable()).getBitmap();
+            if (oldBitmap != null && !oldBitmap.isRecycled()) {
+                oldBitmap.recycle();
+            }
         }
 
         // 创建新的Bitmap并绘制
         Bitmap bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
         // 1. 水平贯穿辅助线
         canvas.drawLine(0, cy, screenWidth, cy, paintGreen);
@@ -283,7 +286,7 @@ public class FloatingService extends Service {
             windowManager.removeView(floatingView);
         }
         // 回收Bitmap
-        if (overlayView != null && overlayView.getDrawable() != null) {
+        if (overlayView != null && overlayView.getDrawable() instanceof BitmapDrawable) {
             Bitmap bitmap = ((BitmapDrawable) overlayView.getDrawable()).getBitmap();
             if (bitmap != null && !bitmap.isRecycled()) {
                 bitmap.recycle();
