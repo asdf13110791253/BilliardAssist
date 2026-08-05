@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ==================== 台球辅助APP核心用到的路径 ==================== -->
+    
+    <!-- 1. 内部缓存目录（最常用！）
+         对应：getCacheDir()
+         用途：存放OpenCV临时文件、截图缓存、瞄准模板缓存、录屏临时帧
+         优势：Android 10+ 无需申请存储权限，系统会自动清理过期文件 -->
+    <cache-path
+        name="internal_cache"
+        path="." />
+
+    <!-- 2. 外部缓存目录（录屏首选！）
+         对应：getExternalCacheDir()
+         用途：存放录屏临时文件、大体积识别缓存
+         优势：不占用内部存储空间，无需申请存储权限 -->
+    <external-cache-path
+        name="external_cache"
+        path="." />
+
+    <!-- 3. APP私有外部文件目录
+         对应：getExternalFilesDir()
+         用途：存放用户自定义的瞄准方案、导出的识别参数、保存的截图
+         优势：卸载APP时自动删除，不污染公共目录 -->
+    <external-files-path
+        name="external_files"
+        path="."
+        android:path="."/>
+
+    <!-- 4. 外部公共目录（按需启用）
+         对应：Environment.getExternalStorageDirectory()
+         用途：如果需要把识别后的截图保存到系统相册/Download目录，才需要启用
+         注意：Android 10+ 需要申请存储权限，不推荐优先使用 -->
+    <external-path
+        name="external_storage"
+        path="." />
+
+    <!-- 5. 媒体文件专用路径（Android 11+ 适配）
+         用途：直接访问系统相册、视频目录，用于读取参考球桌图片
+         优势：无需申请存储权限，符合作用域存储规范 -->
+    <external-media-path
+        name="external_media"
+        path="." />
+
+    <!-- ==================== 兼容旧系统的路径 ==================== -->
+    
+    <!-- 内部文件目录
+         对应：getFilesDir()
+         用途：存放APP配置文件、训练模型文件 -->
+    <files-path
+        name="internal_files"
+        path="." />
+
+    <!-- 根目录（谨慎使用，仅用于特殊场景）
+         用途：访问沙盒外的特定目录，一般不建议启用 -->
+    <!--
+    <root-path
+        name="root"
+        path="" />
+    -->
+</paths>
