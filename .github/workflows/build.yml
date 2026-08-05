@@ -23,35 +23,31 @@ jobs:
           api-level: 34
           ndk: "26.1.10909125"
 
-      - name: 修复Gradle包装器
+      - name: 修复Gradle包装器（国内镜像加速）
         run: |
           rm -rf gradle/wrapper gradlew
           mkdir -p gradle/wrapper
           
-          # 从Github原始仓库下载wrapper jar
+          # 从Gitee镜像下载（国内快）
           curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar
           
-          # 创建wrapper properties配置
+          # 使用腾讯云镜像下载Gradle
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.4-bin.zip
           zipStoreBase=GRADLE_USER_HOME
           zipStorePath=wrapper/dists
           EOF
           
-          # 生成gradlew脚本
           cat > gradlew << 'EOF'
           #!/bin/sh
           exec "$JAVA_HOME/bin/java" -classpath "$(dirname "$0")/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"
           EOF
           
           chmod +x gradlew
-          
-          # 验证文件是否存在
           ls -lh gradle/wrapper/gradle-wrapper.jar
-          file gradle/wrapper/gradle-wrapper.jar
 
       - name: 下载OpenCV so库
         run: |
