@@ -18,20 +18,16 @@ jobs:
           java-version: '17'
           distribution: temurin
 
-      # 修复Gradle Wrapper（已修正目录名+稳定下载源）
       - name: Fix project Gradle Wrapper Version
         run: |
           mkdir -p gradle/wrapper
-          # 锁定Gradle 8.7-bin版本
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
 
-          # 下载函数，ghproxy加速github资源，避开失效国内镜像
           download_gradle() {
               local origin_url="https://services.gradle.org/distributions/gradle-8.7-all.zip"
               local proxy_url="https://ghproxy.com/${origin_url#https://}"
               rm -f temp_gradle_all.zip
               echo "使用Github代理加速下载Gradle完整包"
-              # 优先代理
               if wget --timeout=180 --no-check-certificate -O temp_gradle_all.zip "$proxy_url"; then
                   local size=$(stat -c%s temp_gradle_all.zip)
                   if [ $size -gt 200000000 ]; then
@@ -39,28 +35,23 @@ jobs:
                       return 0
                   fi
               fi
-              # 代理失败则直连github
               echo "代理下载失败，切换github直连"
               wget --timeout=180 --no-check-certificate -O temp_gradle_all.zip "$origin_url"
           }
 
           download_gradle
 
-          # 修复核心：目录名改为 gradle-8.7.0
           unzip -q temp_gradle_all.zip "gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar"
           cp gradle-8.7.0/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/
 
-          # 生成标准gradlew启动脚本
           cat > gradlew << 'EOF'
 #!/bin/sh
 exec java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain "$@"
 EOF
           chmod +x gradlew
 
-          # 清理临时文件
           rm -rf gradle-8.7.0 temp_gradle_all.zip
 
-      # 安装Android SDK&NDK
       - name: Install Android SDK Toolchain
         uses: android-actions/setup-android@v3
         with:
@@ -71,7 +62,6 @@ EOF
       - name: Accept SDK Licenses
         run: yes | sdkmanager --licenses
 
-      # 下载OpenCV so库
       - name: Pull OpenCV native library
         run: |
           mkdir -p native_libs
@@ -108,14 +98,12 @@ EOF
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
           cp native_libs/opencv_out/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
 
-      # 编译Release APK
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
           GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      # 上传成品APK
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
