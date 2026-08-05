@@ -25,6 +25,8 @@ import com.example.billiardassist.service.CapturePermissionActivity;
 public class GuideActivity extends AppCompatActivity {
 
     private static final int REQUEST_OVERLAY = 1001;
+    private static final int MODE_VERTICAL = 0;      // 竖版模式
+    private static final int MODE_HORIZONTAL = 1;    // 横版模式
 
     private TextView tvStatus;
     private Button btnHorizontal, btnVertical;
@@ -35,81 +37,118 @@ public class GuideActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guide);
 
-        // 绑定控件
-        tvStatus = findViewById(R.id.tv_status);
-        btnHorizontal = findViewById(R.id.btn_horizontal);
-        btnVertical = findViewById(R.id.btn_vertical);
-        btnBattery = findViewById(R.id.btn_battery);
-        btnAppSettings = findViewById(R.id.btn_app_settings);
-
-        // 检查悬浮窗权限状态
+        initViews();
+        setupListeners();
         checkOverlayPermission();
-
-        // 横版进
-        btnHorizontal.setOnClickListener(v -> {
-            if (checkAndRequestOverlay()) {
-                launchService(1); // 1 = 横版
-            }
-        });
-
-        // 竖版进
-        btnVertical.setOnClickListener(v -> {
-            if (checkAndRequestOverlay()) {
-                launchService(0); // 0 = 竖版
-            }
-        });
-
-        // 电池优化入口
-        btnBattery.setOnClickListener(v -> {
-            Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-            startActivity(intent);
-        });
-
-        // 应用设置入口
-        btnAppSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            intent.setData(Uri.parse("package:" + getPackageName()));
-            startActivity(intent);
-        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        // 从系统设置返回后刷新状态
         checkOverlayPermission();
     }
 
     /**
-     * 检查悬浮窗权限并更新UI
+     * 初始化视图控件
+     */
+    private void initViews() {
+        tvStatus = findViewById(R.id.tv_status);
+        btnHorizontal = findViewById(R.id.btn_horizontal);
+        btnVertical = findViewById(R.id.btn_vertical);
+        btnBattery = findViewById(R.id.btn_battery);
+        btnAppSettings = findViewById(R.id.btn_app_settings);
+    }
+
+    /**
+     * 设置点击事件监听
+     */
+    private void setupListeners() {
+        // 横版进
+        btnHorizontal.setOnClickListener(v -> {
+            if (hasOverlayPermission()) {
+                launchService(MODE_HORIZONTAL);
+            } else {
+                requestOverlayPermission();
+            }
+        });
+
+        // 竖版进
+        btnVertical.setOnClickListener(v -> {
+            if (hasOverlayPermission()) {
+                launchService(MODE_VERTICAL);
+            } else {
+                requestOverlayPermission();
+            }
+        });
+
+        // 电池优化入口
+        btnBattery.setOnClickListener(v -> {
+            try {
+                Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(this, "无法打开电池优化设置", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 应用设置入口
+        btnAppSettings.setOnClickListener(v -> {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(this, "无法打开应用设置", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * 检查并更新悬浮窗权限状态UI
      */
     private void checkOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (Settings.canDrawOverlays(this)) {
-                tvStatus.setText("已激活");
-                tvStatus.setBackgroundResource(R.drawable.bg_status_active);
-            } else {
-                tvStatus.setText("未激活");
-                tvStatus.setBackgroundResource(R.drawable.bg_status_inactive);
-            }
-        } else {
-            tvStatus.setText("已激活");
+        if (hasOverlayPermission()) {
+            tvStatus.setText(R.string.status_active);
             tvStatus.setBackgroundResource(R.drawable.bg_status_active);
+            enableModeButtons(true);
+        } else {
+            tvStatus.setText(R.string.status_inactive);
+            tvStatus.setBackgroundResource(R.drawable.bg_status_inactive);
+            enableModeButtons(false);
         }
     }
 
     /**
-     * 检查并请求悬浮窗权限
-     * @return true = 已有权限
+     * 检查是否有悬浮窗权限
      */
-    private boolean checkAndRequestOverlay() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "请先授予悬浮窗权限", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()));
-            startActivityForResult(intent, REQUEST_OVERLAY);
-            return false;
-        }
-        return true;
+    private boolean hasOverlayPermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this);
+    }
+
+    /**
+     * 请求悬浮窗权限
+     */
+    private void requestOverlayPermission() {
+        Toast.makeText(this, R.string.toast_request_overlay, Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + getPackageName())
+        );
+        startActivityForResult(intent, REQUEST_OVERLAY);
+    }
+
+    /**
+     * 启用/禁用模式选择按钮
+     */
+    private void enableModeButtons(boolean enabled) {
+        btnHorizontal.setEnabled(enabled);
+        btnVertical.setEnabled(enabled);
+        
+        // 可选：视觉反馈
+        float alpha = enabled ? 1.0f : 0.5f;
+        btnHorizontal.setAlpha(alpha);
+        btnVertical.setAlpha(alpha);
     }
 
     /**
@@ -119,14 +158,25 @@ public class GuideActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CapturePermissionActivity.class);
         intent.putExtra("mode", mode);
         startActivity(intent);
-        Toast.makeText(this, mode == 1 ? "横版模式启动中..." : "竖版模式启动中...", Toast.LENGTH_SHORT).show();
+        
+        String message = (mode == MODE_HORIZONTAL) 
+                ? getString(R.string.toast_starting_horizontal)
+                : getString(R.string.toast_starting_vertical);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_OVERLAY) {
+            // 用户返回后重新检查权限状态
             checkOverlayPermission();
+            
+            if (hasOverlayPermission()) {
+                Toast.makeText(this, R.string.toast_permission_granted, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, R.string.toast_permission_denied, Toast.LENGTH_LONG).show();
+            }
         }
     }
 }
