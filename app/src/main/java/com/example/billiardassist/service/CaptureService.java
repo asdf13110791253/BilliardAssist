@@ -56,49 +56,73 @@ public class CaptureService extends Service {
     }
 
     private void startCapture(int resultCode, Intent data) {
-        MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
-        mediaProjection = mpm.getMediaProjection(resultCode, data);
+        try {
+            Object svc = getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            if (!(svc instanceof MediaProjectionManager)) return;
+            MediaProjectionManager mpm = (MediaProjectionManager) svc;
 
-        WindowManager wm = getSystemService(WindowManager.class);
-        DisplayMetrics metrics = new DisplayMetrics();
-        wm.getDefaultDisplay().getMetrics(metrics);
+            mediaProjection = mpm.getMediaProjection(resultCode, data);
+            if (mediaProjection == null) return;
 
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
-        int dpi = metrics.densityDpi;
+            WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+            if (wm == null) return;
+            DisplayMetrics metrics = new DisplayMetrics();
+            wm.getDefaultDisplay().getMetrics(metrics);
 
-        imageReader = ImageReader.newInstance(width, height, android.graphics.PixelFormat.RGBA_8888, 2);
-        virtualDisplay = mediaProjection.createVirtualDisplay(
-                "CaptureDisplay",
-                width, height, dpi,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                imageReader.getSurface(), null, null
-        );
+            int width = metrics.widthPixels;
+            int height = metrics.heightPixels;
+            int dpi = metrics.densityDpi;
 
-        isRunning = true;
-        captureRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!isRunning) return;
-                Image image = imageReader.acquireLatestImage();
-                if (image != null) {
-                    // 这里可以传递给 AimProcessor 进行识别
-                    image.close();
+            imageReader = ImageReader.newInstance(width, height, android.graphics.PixelFormat.RGBA_8888, 2);
+            virtualDisplay = mediaProjection.createVirtualDisplay(
+                    "CaptureDisplay",
+                    width, height, dpi,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    imageReader.getSurface(), null, null
+            );
+
+            isRunning = true;
+            captureRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (!isRunning) return;
+                    Image image = null;
+                    try {
+                        image = imageReader.acquireLatestImage();
+                        if (image != null) {
+                            // 这里可以传递给 AimProcessor 进行识别
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (image != null) {
+                            try { image.close(); } catch (Exception ignore) {}
+                        }
+                    }
+                    handler.postDelayed(this, 100);
                 }
-                handler.postDelayed(this, 100);
-            }
-        };
-        handler.post(captureRunnable);
+            };
+            handler.post(captureRunnable);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 出错时释放资源
+            cleanupCapture();
+        }
     }
 
     private Notification buildNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID, "录屏服务", NotificationManager.IMPORTANCE_LOW);
-            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) nm.createNotificationChannel(channel);
         }
         Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        int flags = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags = PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pi = PendingIntent.getActivity(this, 0, intent, flags);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("灵喵 录屏服务运行中")
                 .setContentText("屏幕采集进行中...")
@@ -113,9 +137,28 @@ public class CaptureService extends Service {
         super.onDestroy();
         isRunning = false;
         handler.removeCallbacks(captureRunnable);
-        if (virtualDisplay != null) virtualDisplay.release();
-        if (imageReader != null) imageReader.close();
-        if (mediaProjection != null) mediaProjection.stop();
+        cleanupCapture();
+    }
+
+    private void cleanupCapture() {
+        try {
+            if (virtualDisplay != null) {
+                virtualDisplay.release();
+                virtualDisplay = null;
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (imageReader != null) {
+                imageReader.close();
+                imageReader = null;
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (mediaProjection != null) {
+                mediaProjection.stop();
+                mediaProjection = null;
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
