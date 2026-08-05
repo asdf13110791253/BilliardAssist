@@ -16,7 +16,18 @@ jobs:
         run: |
           chmod +x gradlew
           mkdir -p gradle/wrapper
-          wget --no-check-certificate -O gradle/wrapper/gradle-wrapper.jar https://ghproxy.cn/https://github.com/gradle/gradle/raw/v8.7.0/gradle-wrapper.jar
+          # 原始jar地址
+          JAR_URL="https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle-wrapper/gradle-wrapper.jar"
+          # 第一路镜像下载
+          wget --no-check-certificate --timeout=60 -O gradle/wrapper/gradle-wrapper.jar https://mirror.ghproxy.com/${JAR_URL#https://}
+          # 校验文件大小，正常jar大于30KB
+          FILESIZE=$(stat -c%s gradle/wrapper/gradle-wrapper.jar)
+          if [ $FILESIZE -lt 30000 ]; then
+            echo "❌ 第一次下载文件异常（仅$FILESIZE字节），切换备用镜像重下"
+            rm -f gradle/wrapper/gradle-wrapper.jar
+            wget --no-check-certificate --timeout=60 -O gradle/wrapper/gradle-wrapper.jar https://ghproxy.cn/${JAR_URL#https://}
+          fi
+          # 写入gradle版本配置
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
 
       - name: Set up JDK 17
@@ -47,6 +58,7 @@ jobs:
             local output="$2"
             local max_retries=3
             local mirrors=(
+              "https://mirror.ghproxy.com/${url#https://}"
               "https://ghproxy.cn/${url#https://}"
               "$url"
             )
