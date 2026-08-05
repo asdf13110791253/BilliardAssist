@@ -1,9 +1,12 @@
 package com.example.billiardassist;
 
 import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Build;
 
 /**
  * 全局 Application 类
@@ -17,6 +20,9 @@ public class App extends Application {
     public static final String PREFS_CALIBRATION = "calibration";  // 校准数据
     public static final String PREFS_AIM = "aim_config";           // 瞄准参数
     public static final String PREFS_TABLE = "table_bounds";      // 球桌边界
+    
+    // 前台服务通知渠道ID（Android 8.0+必须）
+    public static final String NOTIFICATION_CHANNEL_ID = "billiard_assist_channel";
 
     private static App instance;
     private boolean isOpenCVInitSuccess = false;  // OpenCV初始化状态标记
@@ -26,6 +32,7 @@ public class App extends Application {
         super.onCreate();
         instance = this;
         initDefaultSettings();
+        createNotificationChannel(); // 关键：创建前台服务通知渠道
     }
 
     public static App getInstance() {
@@ -69,6 +76,29 @@ public class App extends Application {
                     .putFloat("right", 1080f)  // 默认1080P宽度，校准后会覆盖
                     .putFloat("bottom", 2340f) // 默认1080P高度，校准后会覆盖
                     .apply();
+        }
+    }
+
+    // ==================== 前台服务通知渠道（关键新增） ====================
+    /**
+     * 创建前台服务通知渠道（Android 8.0+强制要求）
+     * 避免启动前台服务时崩溃："Context.startForegroundService() did not then call Service.startForeground()"
+     */
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    "台球辅助服务", // 渠道名称（用户可见）
+                    NotificationManager.IMPORTANCE_LOW // 低优先级，不打扰用户
+            );
+            channel.setDescription("用于保持辅助服务后台运行，避免被系统杀死");
+            channel.enableLights(false); // 不显示呼吸灯
+            channel.enableVibration(false); // 不震动
+            
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
         }
     }
 
