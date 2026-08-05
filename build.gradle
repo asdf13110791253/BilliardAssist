@@ -1,16 +1,18 @@
 // Top-level build file
+// 适配 Gradle 7.5 + Android Gradle Plugin 7.4.2，符合Gradle 7+官方规范
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
+        // 对应你当前CI环境锁定的AGP版本，无需修改
         classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 
-// 已删除 allprojects 代码块：彻底解决和 settings.gradle 的仓库配置冲突
-// OpenCV等依赖的仓库地址已统一迁移到 settings.gradle 中管理，符合Gradle 7+官方规范
+// 已彻底删除allprojects代码块：避免和settings.gradle的dependencyResolutionManagement配置冲突
+// 所有依赖（含OpenCV）的仓库地址已统一在settings.gradle中管理，CI环境下载更稳定
 
 task clean(type: Delete) {
     delete rootProject.buildDir
