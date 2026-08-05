@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 配置国内镜像
+      # 配置国内SDK镜像加速
       - name: Configure Android SDK Mirror
         run: |
           mkdir -p ~/.android
@@ -33,30 +33,64 @@ jobs:
       - name: Accept Licenses & Install NDK
         run: |
           yes | sdkmanager --licenses
-          sdkmanager "ndk;26.1.10909125" "build-tools;30.0.3" "platforms;android-33"
+          sdkmanager "ndk;26.1.10909125" "build-tools;33.0.2" "platforms;android-33"
 
-      # ============================================================
-      # 核心修复：强制安装 Gradle 7.5（与你本地环境保持一致）
-      # ============================================================
-      - name: Install Gradle 7.5
+      # 下载OpenCV4.9.0预编译so库（多镜像+文件校验，解决404）
+      - name: Download OpenCV so library
         run: |
-          wget https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle.zip
-          unzip -o gradle.zip -d /opt/gradle
-          echo "GRADLE_HOME=/opt/gradle/gradle-7.5" >> $GITHUB_ENV
-          echo "/opt/gradle/gradle-7.5/bin" >> $GITHUB_PATH
+          mkdir -p native_libs
+          download_with_retry() {
+            local url="$1"
+            local output="$2"
+            local max_retries=3
+            local mirrors=(
+              "https://gh-proxy.com/${url#https://}"
+              "https://ghproxy.cn/${url#https://}"
+              "$url"
+            )
+            for mirror in "${mirrors[@]}"; do
+              for ((i=1; i<=max_retries; i++)); do
+                echo "尝试下载镜像 $mirror 第$i次"
+                rm -f "$output"
+                if wget --no-check-certificate --timeout=120 -O "$output" "$mirror"; then
+                  local size=$(stat -c%s "$output")
+                  if [ $size -gt 100000 ]; then
+                    echo "✅ 文件下载完成，大小：$size 字节"
+                    return 0
+                  else
+                    echo "❌ 文件过小，判定为404页面，重新下载"
+                    rm -f "$output"
+                  fi
+                fi
+              done
+            done
+            echo "❌ 所有镜像下载失败，终止流水线"
+            exit 1
+          }
+          # 下载opencv安卓SDK
+          download_with_retry "https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip" native_libs/opencv.zip
+          unzip -q native_libs/opencv.zip -d native_libs/opencv-sdk
+          # 自动创建jniLibs目录
+          mkdir -p app/src/main/jniLibs/arm64-v8a
+          mkdir -p app/src/main/jniLibs/armeabi-v7a
+          # 复制对应架构so文件
+          cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
+          cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
+          echo "✅ so库复制完成"
 
-      # 清理缓存，确保不使用 9.x 的残留数据
+      # 清理Gradle缓存，避免版本残留冲突
       - name: Clean Gradle Cache
         run: |
           rm -rf ~/.gradle/caches/
           rm -rf ~/.gradle/wrapper/
 
-      # 使用 gradle 命令（此时调用的一定是 7.5）
+      # 编译Debug包，使用项目自带gradle-wrapper，不再强制安装外部Gradle
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
 
+      # 上传编译产物
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
