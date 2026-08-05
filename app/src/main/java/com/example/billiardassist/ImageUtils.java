@@ -4,37 +4,53 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.Image;
+
 import java.nio.ByteBuffer;
 
 public class ImageUtils {
 
     /**
-     * 将 Android Media Image 转为 Bitmap（RGBA_8888格式）
+     * 将 Android Media Image 转为 Bitmap（稳健实现）
      */
     public static Bitmap imageToBitmap(Image image) {
         if (image == null) return null;
+        try {
+            // 仅处理常见 RGBA_8888 / Android ImageReader 输出（单 plane 或多 plane 支持）
+            Image.Plane[] planes = image.getPlanes();
+            if (planes == null || planes.length == 0) return null;
+            Image.Plane plane = planes[0];
+            ByteBuffer buffer = plane.getBuffer();
+            if (buffer == null) return null;
+            int pixelStride = plane.getPixelStride();
+            int rowStride = plane.getRowStride();
+            int width = image.getWidth();
+            int height = image.getHeight();
 
-        Image.Plane plane = image.getPlanes()[0];
-        ByteBuffer buffer = plane.getBuffer();
-        int pixelStride = plane.getPixelStride();
-        int rowStride = plane.getRowStride();
-        int width = image.getWidth();
-        int height = image.getHeight();
+            // 防护：尺寸合理性检查
+            if (width <= 0 || height <= 0 || pixelStride <= 0 || rowStride <= 0) return null;
 
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-        if (rowStride == width * pixelStride) {
-            // 无行填充，直接拷贝
-            bitmap.copyPixelsFromBuffer(buffer);
-        } else {
-            // 有行填充，逐行处理
-            int[] pixels = new int[width * height];
+            // 若没有行填充，可一次性拷贝
+            if (rowStride == width * pixelStride) {
+                buffer.rewind();
+                bitmap.copyPixelsFromBuffer(buffer);
+                return bitmap;
+            }
+
+            // 否则逐行拷贝并转换为 ARGB
             byte[] rowBuffer = new byte[rowStride];
+            int[] pixels = new int[width * height];
             for (int y = 0; y < height; y++) {
                 buffer.position(y * rowStride);
                 buffer.get(rowBuffer, 0, rowStride);
                 for (int x = 0; x < width; x++) {
                     int index = x * pixelStride;
+                    // 防护索引越界
+                    if (index + 3 >= rowBuffer.length) {
+                        pixels[y * width + x] = 0; // 透明像素
+                        continue;
+                    }
                     int r = rowBuffer[index] & 0xFF;
                     int g = rowBuffer[index + 1] & 0xFF;
                     int b = rowBuffer[index + 2] & 0xFF;
@@ -43,16 +59,24 @@ public class ImageUtils {
                 }
             }
             bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+            return bitmap;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                image.close();
+            } catch (Exception ignored) {}
         }
-
-        return bitmap;
     }
 
-    /**
-     * 从资源加载 Bitmap（用于模板）
-     */
     public static Bitmap decodeResource(Resources res, int resId) {
         if (resId == 0) return null;
-        return BitmapFactory.decodeResource(res, resId);
+        try {
+            return BitmapFactory.decodeResource(res, resId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
