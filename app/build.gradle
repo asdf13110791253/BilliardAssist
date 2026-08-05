@@ -19,8 +19,9 @@ android {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 
-        // CI 环境显式指定 NDK 路径（非常重要）
-        ndkPath System.getenv("ANDROID_NDK_HOME")
+        // CI 环境请通过 local.properties 中的 ndk.dir 或 CI 环境变量（ANDROID_NDK_HOME）来配置 NDK 路径。
+        // 在 defaultConfig 中设置 ndkPath 会导致 Gradle 报错：Unknown property on DefaultConfig
+        // ndkPath System.getenv("ANDROID_NDK_HOME")
     }
 
     buildTypes {
@@ -46,7 +47,9 @@ android {
     // 解决 META-INF 冲突（OpenCV / AndroidX 常见）
     packagingOptions {
         resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            // 避免使用花括号或前导斜杠写法，逐项列出更可靠
+            excludes += 'META-INF/AL2.0'
+            excludes += 'META-INF/LGPL2.1'
             excludes += 'META-INF/DEPENDENCIES'
             excludes += 'META-INF/NOTICE'
             excludes += 'META-INF/LICENSE'
