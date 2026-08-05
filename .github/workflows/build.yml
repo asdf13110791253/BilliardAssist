@@ -26,7 +26,14 @@ jobs:
       - name: Download OpenCV
         run: |
           mkdir native_libs
-          wget https://ghproxy.com/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip -O opencv.zip
+          # 稳定ghfast镜像下载
+          wget --no-check-certificate https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip -O opencv.zip
+          # 文件校验，小于1M判定为下载失败
+          filesize=$(stat -c%s opencv.zip)
+          if [ $filesize -lt 1000000 ]; then
+              echo "❌ 下载文件异常，不是完整压缩包"
+              exit 1
+          fi
           unzip opencv.zip -d native_libs
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
