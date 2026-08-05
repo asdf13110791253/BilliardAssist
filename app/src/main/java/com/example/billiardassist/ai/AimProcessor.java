@@ -192,7 +192,7 @@ public class AimProcessor {
             
             // 转HSV色彩空间
             hsv = new Mat();
-            Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGRA2HSV);
+            Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGBA2HSV);
 
             // V通道阈值过滤（H:0-180, S:0-255, V:0-255）
             mask = new Mat();
