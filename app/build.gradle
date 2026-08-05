@@ -42,8 +42,8 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
-    // 解决so、META-INF文件冲突
-    packaging {
+    // 解决so、META-INF文件冲突（修复：packaging -> packagingOptions）
+    packagingOptions {
         resources {
             excludes += 'META-INF/AL2.0'
             excludes += 'META-INF/LGPL2.1'
