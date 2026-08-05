@@ -5,12 +5,15 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.billiardassist.App;
 import com.example.billiardassist.R;
 import com.example.billiardassist.service.CapturePermissionActivity;
+import org.opencv.android.OpenCVLoader;
 
 /**
  * 引导页 / 主界面
@@ -27,6 +30,7 @@ public class GuideActivity extends AppCompatActivity {
     private static final int REQUEST_OVERLAY = 1001;
     private static final int MODE_VERTICAL = 0;      // 竖版模式
     private static final int MODE_HORIZONTAL = 1;    // 横版模式
+    private static final String TAG = "GuideActivity";
 
     private TextView tvStatus;
     private Button btnHorizontal, btnVertical;
@@ -35,11 +39,30 @@ public class GuideActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // ===== 核心新增：初始化OpenCV并记录全局状态 =====
+        boolean isOpenCVReady = OpenCVLoader.initDebug();
+        App.getInstance().setOpenCVInitSuccess(isOpenCVReady);
+        if (!isOpenCVReady) {
+            Log.e(TAG, "OpenCV初始化失败！请检查Gradle依赖是否正确");
+            Toast.makeText(this, "OpenCV初始化失败，辅助功能将无法使用", Toast.LENGTH_LONG).show();
+        } else {
+            Log.d(TAG, "OpenCV初始化成功，算法模块加载完成🎱");
+        }
+        // ================================================
+
         setContentView(R.layout.activity_guide);
 
         initViews();
         setupListeners();
         checkOverlayPermission();
+        
+        // ===== 新增：OpenCV未就绪时禁用功能按钮，避免崩溃 =====
+        if (!isOpenCVReady) {
+            enableModeButtons(false);
+            Toast.makeText(this, "请检查依赖后重启APP", Toast.LENGTH_SHORT).show();
+        }
+        // ==================================================
     }
 
     @Override
@@ -66,6 +89,11 @@ public class GuideActivity extends AppCompatActivity {
     private void setupListeners() {
         // 横版进
         btnHorizontal.setOnClickListener(v -> {
+            // 新增：启动前校验OpenCV状态
+            if (!App.getInstance().isOpenCVInitSuccess()) {
+                Toast.makeText(GuideActivity.this, "OpenCV未就绪，请重启APP", Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (hasOverlayPermission()) {
                 launchService(MODE_HORIZONTAL);
             } else {
@@ -75,6 +103,11 @@ public class GuideActivity extends AppCompatActivity {
 
         // 竖版进
         btnVertical.setOnClickListener(v -> {
+            // 新增：启动前校验OpenCV状态
+            if (!App.getInstance().isOpenCVInitSuccess()) {
+                Toast.makeText(GuideActivity.this, "OpenCV未就绪，请重启APP", Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (hasOverlayPermission()) {
                 launchService(MODE_VERTICAL);
             } else {
@@ -145,7 +178,7 @@ public class GuideActivity extends AppCompatActivity {
         btnHorizontal.setEnabled(enabled);
         btnVertical.setEnabled(enabled);
         
-        // 可选：视觉反馈
+        // 视觉反馈
         float alpha = enabled ? 1.0f : 0.5f;
         btnHorizontal.setAlpha(alpha);
         btnVertical.setAlpha(alpha);
