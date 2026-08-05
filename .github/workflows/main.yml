@@ -12,27 +12,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Fix broken Gradle wrapper lightweight
+      # 直接安装系统Gradle8.7，不用折腾gradle-wrapper下载
+      - name: Install Gradle 8.7
         run: |
-          chmod +x gradlew
-          mkdir -p gradle/wrapper
-          # Gitee镜像下载完整Gradle8.7安装包，避开raw.githubusercontent失效链接
-          wget --no-check-certificate --timeout=120 -O gradle-wrapper.zip https://gitee.com/mirrors/gradle/releases/download/v8.7/gradle-8.7-bin.zip
-          # 校验压缩包大小，合法包大于1MB
-          ZIP_SIZE=$(stat -c%s gradle-wrapper.zip)
-          if [ $ZIP_SIZE -lt 1000000 ]; then
-              echo "❌ Gitee镜像下载压缩包异常，任务终止"
-              exit 1
-          fi
-          # 仅解压wrapper所需文件
-          unzip -q gradle-wrapper.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar gradle-8.7/gradle/wrapper/gradle-wrapper.properties
-          # 复制到项目gradle目录
-          cp gradle-8.7/gradle/wrapper/* gradle/wrapper/
-          # 写入标准gradle下载地址
-          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-          # 删除临时解压文件
-          rm -rf gradle-8.7 gradle-wrapper.zip
-          echo "✅ Gradle wrapper修复完成"
+          sudo apt update
+          sudo apt install -y wget unzip
+          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          sudo unzip -d /opt gradle-8.7-bin.zip
+          echo "GRADLE_HOME=/opt/gradle-8.7" >> $GITHUB_ENV
+          echo "PATH=$PATH:/opt/gradle-8.7/bin" >> $GITHUB_ENV
+          rm gradle-8.7-bin.zip
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -92,8 +81,9 @@ jobs:
           cp native_libs/opencv-sdk/OpenCV-android-sdk/sdk/native/libs/armeabi-v7a/*.so app/src/main/jniLibs/armeabi-v7a/
           echo "✅ so库复制完成"
 
+      # 改用全局gradle命令打包，不再使用./gradlew
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease --no-daemon --stacktrace
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.1.10909125
 
