@@ -4,97 +4,103 @@ import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 
 /**
  * 全局 Application 类
- * 负责初始化全局配置、加载保存的用户偏好、跨组件数据共享
- * ⚠️ 注意：静态实例生命周期与应用一致，请勿持有Activity/View引用，避免内存泄漏
  */
 public class App extends Application {
 
-    // ==================== 全局常量 ====================
-    public static final String PREFS_SETTINGS = "settings";       // 通用设置
-    public static final String PREFS_CALIBRATION = "calibration";  // 校准数据
-    public static final String PREFS_AIM = "aim_config";           // 瞄准参数
-    public static final String PREFS_TABLE = "table_bounds";      // 球桌边界
-    
-    // 前台服务通知渠道ID（Android 8.0+必须）
+    public static final String PREFS_SETTINGS = "settings";
+    public static final String PREFS_CALIBRATION = "calibration";
+    public static final String PREFS_AIM = "aim_config";
+    public static final String PREFS_TABLE = "table_bounds";
     public static final String NOTIFICATION_CHANNEL_ID = "billiard_assist_channel";
 
     private static App instance;
-    private boolean isOpenCVInitSuccess = false;  // OpenCV初始化状态标记
+    private boolean isOpenCVInitSuccess = false;
+
+    // ✅ 新增：录屏数据存储
+    private int mediaProjectionResultCode;
+    private Intent mediaProjectionData;
 
     @Override
     public void onCreate() {
         super.onCreate();
         instance = this;
         initDefaultSettings();
-        createNotificationChannel(); // 关键：创建前台服务通知渠道
+        createNotificationChannel();
     }
 
     public static App getInstance() {
         return instance;
     }
 
+    // ==================== 录屏数据管理 ====================
+    public void setMediaProjectionData(int resultCode, Intent data) {
+        this.mediaProjectionResultCode = resultCode;
+        this.mediaProjectionData = data;
+    }
+
+    public int getMediaProjectionResultCode() {
+        return mediaProjectionResultCode;
+    }
+
+    public Intent getMediaProjectionData() {
+        return mediaProjectionData;
+    }
+
     // ==================== 初始化默认配置 ====================
     private void initDefaultSettings() {
-        // 通用设置（辅助线、反射模式等）
         SharedPreferences settingsPrefs = getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
         if (settingsPrefs.getAll().isEmpty()) {
             settingsPrefs.edit()
-                    .putInt("line_color", Color.GREEN)       // 辅助线颜色：默认绿色
-                    .putInt("comp_ratio", 18)               // 补偿比例：0.18（18/100）
-                    .putInt("bank_count", 2)                // 默认翻袋次数：2次
-                    .putFloat("line_thickness", 5.0f)       // 辅助线粗细：5px
-                    .putBoolean("ant_line", false)          // 蚂蚁线：关闭
-                    .putBoolean("adsorb", true)              // 瞄准吸附：开启
-                    .putInt("reflect_mode", 0)              // 反射模式：0=补偿/1=镜像
-                    .putInt("table_cloth", 1)               // 球桌布类型：0/1/2
+                    .putInt("line_color", Color.GREEN)
+                    .putInt("comp_ratio", 18)
+                    .putInt("bank_count", 2)
+                    .putFloat("line_thickness", 5.0f)
+                    .putBoolean("ant_line", false)
+                    .putBoolean("adsorb", true)
+                    .putInt("reflect_mode", 0)
+                    .putInt("table_cloth", 1)
                     .apply();
         }
 
-        // 瞄准算法参数（V/S/P）
         SharedPreferences aimPrefs = getSharedPreferences(PREFS_AIM, Context.MODE_PRIVATE);
         if (aimPrefs.getAll().isEmpty()) {
             aimPrefs.edit()
-                    .putInt("scheme", 0)                    // 当前方案：0=标准台球
-                    .putInt("v_value", 232)                 // 亮度阈值：232
-                    .putInt("s_value", 15)                  // 圆白度：15
-                    .putInt("p_value", 15)                  // 检测灵敏度：15
+                    .putInt("scheme", 0)
+                    .putInt("v_value", 232)
+                    .putInt("s_value", 15)
+                    .putInt("p_value", 15)
                     .apply();
         }
 
-        // 球桌边界（默认全屏，校准后可更新）
         SharedPreferences tablePrefs = getSharedPreferences(PREFS_TABLE, Context.MODE_PRIVATE);
         if (tablePrefs.getAll().isEmpty()) {
             tablePrefs.edit()
                     .putFloat("left", 0f)
                     .putFloat("top", 0f)
-                    .putFloat("right", 1080f)  // 默认1080P宽度，校准后会覆盖
-                    .putFloat("bottom", 2340f) // 默认1080P高度，校准后会覆盖
+                    .putFloat("right", 1080f)
+                    .putFloat("bottom", 2340f)
                     .apply();
         }
     }
 
-    // ==================== 前台服务通知渠道（关键新增） ====================
-    /**
-     * 创建前台服务通知渠道（Android 8.0+强制要求）
-     * 避免启动前台服务时崩溃："Context.startForegroundService() did not then call Service.startForeground()"
-     */
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     NOTIFICATION_CHANNEL_ID,
-                    "台球辅助服务", // 渠道名称（用户可见）
-                    NotificationManager.IMPORTANCE_LOW // 低优先级，不打扰用户
+                    "台球辅助服务",
+                    NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("用于保持辅助服务后台运行，避免被系统杀死");
-            channel.enableLights(false); // 不显示呼吸灯
-            channel.enableVibration(false); // 不震动
-            
+            channel.setDescription("用于保持辅助服务后台运行");
+            channel.enableLights(false);
+            channel.enableVibration(false);
+
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -112,13 +118,11 @@ public class App extends Application {
     }
 
     // ==================== 通用设置 Getter/Setter ====================
-    /** 获取辅助线颜色 */
     public int getLineColor() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("line_color", Color.GREEN);
     }
 
-    /** 设置辅助线颜色 */
     public void setLineColor(int color) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -126,14 +130,12 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取补偿比例（0.0~1.0） */
     public double getCompRatio() {
         int ratio = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("comp_ratio", 18);
-        return ratio / 100.0;  // 18 → 0.18，适配AimProcessor计算逻辑
+        return ratio / 100.0;
     }
 
-    /** 设置补偿比例（传入0~100的整数，如18代表0.18） */
     public void setCompRatio(int ratio) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -141,27 +143,23 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取翻袋次数 */
     public int getBankCount() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("bank_count", 2);
     }
 
-    /** 设置翻袋次数 */
     public void setBankCount(int count) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
-                .putInt("bank_count", Math.max(0, Math.min(5, count))) // 最多5次翻袋
+                .putInt("bank_count", Math.max(0, Math.min(5, count)))
                 .apply();
     }
 
-    /** 获取辅助线粗细 */
     public float getLineThickness() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getFloat("line_thickness", 5.0f);
     }
 
-    /** 设置辅助线粗细 */
     public void setLineThickness(float thickness) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -169,13 +167,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 是否开启蚂蚁线 */
     public boolean isAntLineEnabled() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getBoolean("ant_line", false);
     }
 
-    /** 设置蚂蚁线开关 */
     public void setAntLineEnabled(boolean enabled) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -183,13 +179,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 是否开启瞄准吸附 */
     public boolean isAdsorbEnabled() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getBoolean("adsorb", true);
     }
 
-    /** 设置吸附开关 */
     public void setAdsorbEnabled(boolean enabled) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -197,13 +191,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取反射模式（0=补偿/1=镜像） */
     public int getReflectMode() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("reflect_mode", 0);
     }
 
-    /** 设置反射模式 */
     public void setReflectMode(int mode) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -211,13 +203,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取球桌布类型 */
     public int getTableClothType() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("table_cloth", 1);
     }
 
-    /** 设置球桌布类型 */
     public void setTableClothType(int type) {
         getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .edit()
@@ -226,13 +216,11 @@ public class App extends Application {
     }
 
     // ==================== 瞄准参数 Getter/Setter ====================
-    /** 获取当前瞄准方案 */
     public int getCurrentAimScheme() {
         return getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .getInt("scheme", 0);
     }
 
-    /** 设置当前瞄准方案 */
     public void setCurrentAimScheme(int scheme) {
         getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .edit()
@@ -240,13 +228,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取亮度阈值V */
     public int getAimV() {
         return getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .getInt("v_value", 232);
     }
 
-    /** 设置亮度阈值V */
     public void setAimV(int v) {
         getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .edit()
@@ -254,13 +240,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取圆白度S */
     public int getAimS() {
         return getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .getInt("s_value", 15);
     }
 
-    /** 设置圆白度S */
     public void setAimS(int s) {
         getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .edit()
@@ -268,13 +252,11 @@ public class App extends Application {
                 .apply();
     }
 
-    /** 获取检测灵敏度P */
     public int getAimP() {
         return getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .getInt("p_value", 15);
     }
 
-    /** 设置检测灵敏度P */
     public void setAimP(int p) {
         getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .edit()
@@ -282,8 +264,6 @@ public class App extends Application {
                 .apply();
     }
 
-    // ==================== 球桌边界管理 ====================
-    /** 保存球桌边界（校准后调用） */
     public void saveTableBounds(float left, float top, float right, float bottom) {
         getSharedPreferences(PREFS_TABLE, MODE_PRIVATE)
                 .edit()
@@ -292,25 +272,5 @@ public class App extends Application {
                 .putFloat("right", right)
                 .putFloat("bottom", bottom)
                 .apply();
-    }
-
-    /** 获取球桌边界（返回[left, top, right, bottom]） */
-    public float[] getTableBounds() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_TABLE, MODE_PRIVATE);
-        return new float[]{
-                prefs.getFloat("left", 0f),
-                prefs.getFloat("top", 0f),
-                prefs.getFloat("right", 1080f),
-                prefs.getFloat("bottom", 2340f)
-        };
-    }
-
-    // ==================== 工具方法 ====================
-    /** 重置所有配置为默认值 */
-    public void resetAllSettings() {
-        getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE).edit().clear().apply();
-        getSharedPreferences(PREFS_AIM, MODE_PRIVATE).edit().clear().apply();
-        getSharedPreferences(PREFS_TABLE, MODE_PRIVATE).edit().clear().apply();
-        initDefaultSettings(); // 重新写入默认值
     }
 }
