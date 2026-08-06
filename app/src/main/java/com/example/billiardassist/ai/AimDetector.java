@@ -34,7 +34,6 @@ public class AimDetector {
             Utils.bitmapToMat(screenBitmap, src);
 
             Mat hsv = new Mat();
-            // ✅ 修复1：COLOR_BGRA2HSV -> COLOR_RGB2HSV
             Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGB2HSV);
 
             Mat brightMask = new Mat();
@@ -112,7 +111,6 @@ public class AimDetector {
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGRA2GRAY);
 
         Mat mask = Mat.zeros(gray.size(), gray.type());
-        // ✅ 修复2：Core.circle -> Imgproc.circle
         Imgproc.circle(mask, new org.opencv.core.Point(cx, cy), radius, new Scalar(255), -1);
 
         Scalar mean = Core.mean(gray, mask);
