@@ -34,7 +34,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 设置页面 -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
@@ -59,6 +58,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
+
+        <!-- 🎵 音乐服务 -->
+        <service
+            android:name=".service.MusicService"
+            android:enabled="true"
+            android:exported="false" />
 
         <receiver
             android:name=".receiver.BatteryReceiver"
