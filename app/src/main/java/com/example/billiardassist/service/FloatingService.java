@@ -111,7 +111,7 @@ public class FloatingService extends Service {
 
     private void checkChargingStatus() {
         try {
-            android.os.BatteryManager batteryManager = 
+            android.os.BatteryManager batteryManager =
                 (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
             if (batteryManager != null) {
                 isCharging = batteryManager.isCharging();
@@ -121,10 +121,8 @@ public class FloatingService extends Service {
         }
     }
 
-    // ✅ 修复：兼容API 33的温度读取
     private float getBatteryTemperature() {
         try {
-            // 尝试读取系统温度文件
             String[] paths = {
                 "/sys/class/thermal/thermal_zone0/temp",
                 "/sys/class/power_supply/battery/temp",
@@ -258,10 +256,12 @@ public class FloatingService extends Service {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
+        // 基础辅助线
         canvas.drawLine(0, cy, screenWidth, cy, paintGreen);
         canvas.drawLine(cx, 0, cx, screenHeight, paintGreen);
         canvas.drawCircle(cx, cy, 60, paintRed);
 
+        // ===== AI辅助绘制 =====
         AimAssistManager aimManager = AimAssistManager.getInstance();
 
         android.graphics.Point aimPoint = aimManager.getRecommendedAimPoint();
