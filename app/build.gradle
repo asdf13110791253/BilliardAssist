@@ -16,7 +16,6 @@ android {
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
-        // 自动读取CI环境NDK路径
         externalNativeBuild {
             ndkBuild {
                 arguments "APP_ABI=armeabi-v7a,arm64-v8a"
@@ -24,13 +23,33 @@ android {
         }
     }
 
+    // ===== ✅ 新增：签名配置 =====
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            // 使用debug签名（方便CI构建）
+            // 注意：正式发布建议使用自己的签名文件
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release  // ✅ 使用签名
             minifyEnabled false
             debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
+            signingConfig signingConfigs.debug    // ✅ debug签名
             debuggable true
             ext.enableCrashlytics = false
         }
@@ -42,7 +61,6 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
-    // 解决so、META-INF文件冲突（修复：packaging -> packagingOptions）
     packagingOptions {
         resources {
             excludes += 'META-INF/AL2.0'
@@ -77,11 +95,9 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    // OpenCV 4.9.0 稳定依赖
     implementation 'org.opencv:opencv:4.9.0'
 }
 
-// 全局锁定Kotlin版本，杜绝重复类冲突
 configurations.all {
     resolutionStrategy {
         force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
