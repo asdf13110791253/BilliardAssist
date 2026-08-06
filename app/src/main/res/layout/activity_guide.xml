@@ -1,40 +1,209 @@
-<!-- 底部操作按钮 -->
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_alignParentBottom="true"
-    android:layout_marginBottom="36dp"
-    android:orientation="vertical">
+    android:layout_height="match_parent"
+    android:background="#FF0D3311"
+    android:fillViewport="true">
 
-    <!-- 主按钮：立即体验 -->
-    <Button
-        android:id="@+id/btn_start_pro"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#FFD4A017"
-        android:text="立即开启专业模式"
-        android:textColor="#FF0D3311"
-        android:textSize="18sp"
-        android:textStyle="bold"/>
-
-    <!-- ✅ 新增：设置按钮 -->
-    <Button
-        android:id="@+id/btn_settings"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginTop="8dp"
-        android:background="#33444444"
-        android:text="⚙️ 设置"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14sp"/>
-
-    <!-- 副按钮：隐私政策 -->
-    <TextView
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:text="《隐私政策》 | 《用户协议》"
-        android:textColor="#FF888888"
-        android:textSize="12sp"/>
-</LinearLayout>
+        android:padding="24dp">
+
+        <!-- 顶部品牌标识 -->
+        <LinearLayout
+            android:id="@+id/layout_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="32dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@mipmap/ic_launcher"
+                android:layout_marginRight="12dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="#FFFFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"/>
+        </LinearLayout>
+
+        <!-- 状态显示 -->
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_header"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/status_inactive"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <!-- 模式选择按钮 -->
+        <LinearLayout
+            android:id="@+id/layout_modes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_status"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btn_vertical"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/btn_vertical"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:enabled="false"
+                android:alpha="0.5"/>
+
+            <Button
+                android:id="@+id/btn_horizontal"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_horizontal"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:enabled="false"
+                android:alpha="0.5"/>
+        </LinearLayout>
+
+        <!-- 系统设置按钮 -->
+        <LinearLayout
+            android:id="@+id/layout_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_modes"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btn_battery"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/btn_battery"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:background="#33444444"/>
+
+            <Button
+                android:id="@+id/btn_app_settings"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_app_settings"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:background="#33444444"/>
+        </LinearLayout>
+
+        <!-- 使用说明 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="24dp"
+            android:text="@string/usage_title"
+            android:textColor="#FFD4A017"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="48dp"
+            android:text="@string/usage_1"
+            android:textColor="#FFCCCCCC"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="72dp"
+            android:text="@string/usage_2"
+            android:textColor="#FFCCCCCC"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="96dp"
+            android:text="@string/usage_3"
+            android:textColor="#FFCCCCCC"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"/>
+
+        <!-- 系统设置说明 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="128dp"
+            android:text="@string/system_settings"
+            android:textColor="#FFD4A017"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="152dp"
+            android:text="@string/system_settings_desc"
+            android:textColor="#FFAAAAAA"
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp"/>
+
+        <!-- ✅ 新增：设置按钮 -->
+        <Button
+            android:id="@+id/btn_settings"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="200dp"
+            android:background="#44555555"
+            android:text="⚙️ 设置"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <!-- 底部占位 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_below="@id/layout_settings"
+            android:layout_marginTop="260dp"/>
+
+    </RelativeLayout>
+</ScrollView>
