@@ -40,10 +40,10 @@ public class FloatingService extends Service {
     private Paint paintGreen, paintRed, paintYellow;
     private int screenWidth, screenHeight;
 
-    // 配置
     private int lineColor = Color.GREEN;
     private float lineThickness = 5.0f;
     private boolean showAntLine = false;
+    private boolean isDrawing = false;
 
     @Override
     public void onCreate() {
@@ -56,12 +56,12 @@ public class FloatingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && "STOP".equals(intent.getAction())) {
+            stopDrawing();
             stopSelf();
             return START_NOT_STICKY;
         }
 
         startForeground(NOTIFICATION_ID, buildNotification());
-
         initOverlayWindow();
         startDrawingLoop();
 
@@ -106,13 +106,11 @@ public class FloatingService extends Service {
         if (windowManager == null) return;
 
         DisplayMetrics metrics = new DisplayMetrics();
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 screenWidth = windowManager.getCurrentWindowMetrics().getBounds().width();
                 screenHeight = windowManager.getCurrentWindowMetrics().getBounds().height();
             } catch (Exception e) {
-                // 回退到旧方法
                 windowManager.getDefaultDisplay().getMetrics(metrics);
                 screenWidth = metrics.widthPixels;
                 screenHeight = metrics.heightPixels;
@@ -146,37 +144,45 @@ public class FloatingService extends Service {
         params.x = 0;
         params.y = 0;
 
-        // addView 可能抛 IllegalStateException（重复添加）或其他异常，捕获处理
         try {
-            // 如果已经添加则跳过
             if (floatingView.getParent() == null) {
                 windowManager.addView(floatingView, params);
             }
         } catch (Exception e) {
-            // 记录/忽略，避免崩溃
             e.printStackTrace();
         }
     }
 
     private void startDrawingLoop() {
+        if (isDrawing) return;
+        isDrawing = true;
+
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (!isDrawing) return;
                 drawGuideLines(screenWidth / 2, screenHeight / 2);
                 mainHandler.postDelayed(this, 16);
             }
         });
     }
 
+    private void stopDrawing() {
+        isDrawing = false;
+        mainHandler.removeCallbacksAndMessages(null);
+    }
+
+    /**
+     * 绘制辅助线 - 完整版
+     */
     public void drawGuideLines(int cx, int cy) {
         if (overlayView == null || cx < 0 || cy < 0 || screenWidth <= 0 || screenHeight <= 0) return;
 
-        // 回收旧Bitmap（小心并发/正在显示的情况）
+        // 回收旧Bitmap
         try {
             if (overlayView.getDrawable() instanceof BitmapDrawable) {
                 Bitmap oldBitmap = ((BitmapDrawable) overlayView.getDrawable()).getBitmap();
                 if (oldBitmap != null && !oldBitmap.isRecycled()) {
-                    // 先把 ImageView 清空引用，保证不会正在使用同一 bitmap
                     overlayView.setImageDrawable(null);
                     oldBitmap.recycle();
                 }
@@ -188,7 +194,6 @@ public class FloatingService extends Service {
         try {
             bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
         } catch (OutOfMemoryError oom) {
-            // OOM 时跳过本次绘制
             oom.printStackTrace();
             return;
         }
@@ -196,107 +201,54 @@ public class FloatingService extends Service {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
+        // ✅ 绘制十字准星
         canvas.drawLine(0, cy, screenWidth, cy, paintGreen);
         canvas.drawLine(cx, 0, cx, screenHeight, paintGreen);
+
+        // ✅ 绘制瞄准圈
+        paintRed.setStyle(Paint.Style.STROKE);
         canvas.drawCircle(cx, cy, 60, paintRed);
 
+        // ✅ 绘制中心点
         paintRed.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, 8, paintRed);
-        paintRed.setStyle(Paint.Style.STROKE);
 
-        if (showAntLine) {
-            drawDashedLine(canvas, cx - 300, cy - 300, cx + 300, cy + 300, paintYellow);
+        // ✅ 绘制角度刻度
+        for (int i = 0; i < 360; i += 30) {
+            double rad = Math.toRadians(i);
+            float startX = (float) (cx + Math.cos(rad) * 70);
+            float startY = (float) (cy + Math.sin(rad) * 70);
+            float endX = (float) (cx + Math.cos(rad) * 85);
+            float endY = (float) (cy + Math.sin(rad) * 85);
+            canvas.drawLine(startX, startY, endX, endY, paintYellow);
         }
 
-        canvas.drawLine(cx - 200, cy - 200, cx + 200, cy + 200, paintYellow);
-        canvas.drawLine(cx + 200, cy - 200, cx - 200, cy + 200, paintYellow);
-
-        // 确保在主线程/视图线程更新 ImageView
-        if (overlayView != null) {
-            overlayView.post(() -> {
-                try {
-                    overlayView.setImageBitmap(bitmap);
-                } catch (Exception e) {
-                    // 如果设置失败，回收 bitmap
-                    e.printStackTrace();
-                    if (bitmap != null && !bitmap.isRecycled()) {
-                        bitmap.recycle();
-                    }
-                }
-            });
-        } else {
-            if (bitmap != null && !bitmap.isRecycled()) {
-                bitmap.recycle();
+        // ✅ 绘制蚂蚁线（如果开启）
+        if (showAntLine) {
+            paintYellow.setStyle(Paint.Style.STROKE);
+            paintYellow.setStrokeWidth(2);
+            float radius = 60;
+            for (int i = 0; i < 360; i += 10) {
+                double rad = Math.toRadians(i);
+                float dotX = (float) (cx + Math.cos(rad) * radius);
+                float dotY = (float) (cy + Math.sin(rad) * radius);
+                canvas.drawCircle(dotX, dotY, 3, paintYellow);
             }
         }
-    }
 
-    private void drawDashedLine(Canvas canvas, float x1, float y1, float x2, float y2, Paint paint) {
-        float dashLen = 12f;
-        float gapLen = 8f;
-        float dx = x2 - x1;
-        float dy = y2 - y1;
-        float len = (float) Math.sqrt(dx * dx + dy * dy);
-        if (len == 0) return;
-
-        float ux = dx / len;
-        float uy = dy / len;
-        float drawn = 0;
-
-        while (drawn < len) {
-            float segEnd = Math.min(drawn + dashLen, len);
-            canvas.drawLine(
-                    x1 + ux * drawn, y1 + uy * drawn,
-                    x1 + ux * segEnd, y1 + uy * segEnd,
-                    paint
-            );
-            drawn = segEnd + gapLen;
-        }
-    }
-
-    public void updateLineStyle(int color, float thickness) {
-        this.lineColor = color;
-        this.lineThickness = thickness;
-        if (paintGreen != null) {
-            paintGreen.setColor(color);
-            paintGreen.setStrokeWidth(thickness);
-        }
-        if (paintRed != null) {
-            paintRed.setStrokeWidth(thickness + 1);
-        }
-        App.getInstance().setLineColor(color);
-        App.getInstance().setLineThickness(thickness);
-    }
-
-    public void setAntLineVisible(boolean visible) {
-        this.showAntLine = visible;
-        App.getInstance().setAntLineEnabled(visible);
+        overlayView.setImageBitmap(bitmap);
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        mainHandler.removeCallbacksAndMessages(null);
+        stopDrawing();
         try {
-            if (floatingView != null && floatingView.getParent() != null && windowManager != null) {
+            if (floatingView != null && floatingView.getParent() != null) {
                 windowManager.removeView(floatingView);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         }
-
-        try {
-            if (overlayView != null && overlayView.getDrawable() instanceof BitmapDrawable) {
-                Bitmap bitmap = ((BitmapDrawable) overlayView.getDrawable()).getBitmap();
-                if (bitmap != null && !bitmap.isRecycled()) {
-                    bitmap.recycle();
-                }
-            }
-        } catch (Exception ignored) {}
-
-        try {
-            stopForeground(true);
-        } catch (Exception ignored) {}
+        super.onDestroy();
     }
 
     @Override
