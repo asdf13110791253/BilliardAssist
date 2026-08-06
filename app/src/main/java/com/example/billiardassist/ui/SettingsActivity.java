@@ -1,245 +1,180 @@
 package com.example.billiardassist.ui;
 
-import android.content.SharedPreferences;
-import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
-import com.example.billiardassist.R;
-import com.example.billiardassist.service.FloatingService;
 
-/**
- * 设置面板
- */
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.billiardassist.App;
+import com.example.billiardassist.R;
+
 public class SettingsActivity extends AppCompatActivity {
 
-    // 10种可选颜色
-    private static final int[] COLORS = {
-            Color.BLACK, Color.WHITE, Color.GRAY, Color.RED,
-            Color.GREEN, Color.BLUE, Color.YELLOW, Color.CYAN,
-            Color.MAGENTA, 0xFFFF8C00 // Orange
-    };
+    private RadioGroup rgTableCloth;
+    private RadioButton rbCloth1, rbCloth2, rbCloth3;
 
-    private SharedPreferences prefs;
-    private int selectedColor = Color.GREEN;
-    private int compensationRatio = 18; // 0.18 存为整数 18
-    private int bankCount = 2;
-    private float lineThickness = 5.0f;
-    private boolean antLineEnabled = false;
-    private boolean adsorbEnabled = true;
-    private int reflectMode = 0; // 0=反射补偿, 1=镜像反射
-    private int tableCloth = 1; // 0/1/2 对应桌布1/2/3
+    private RadioGroup rgReflectMode;
+    private RadioButton rbCompensation, rbMirror;
 
-    // UI 控件
-    private TextView tvCompValue, tvBankValue, tvThicknessValue;
-    private SeekBar seekComp, seekBank, seekThickness;
-    private Switch switchAntLine, switchAdsorb;
-    private RadioGroup rgTableCloth, rgReflect;
-    private Button btnExit;
+    private SeekBar seekCompRatio;
+    private TextView tvCompRatio;
+
+    private SeekBar seekBankCount;
+    private TextView tvBankCount;
+
+    private SeekBar seekLineThickness;
+    private TextView tvLineThickness;
+
+    private Switch swAntLine;
+    private Switch swAdsorb;
+
+    private Button btnExitApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        prefs = getSharedPreferences("settings", MODE_PRIVATE);
+        initViews();
         loadSettings();
-
-        initTableClothUI();
-        initReflectUI();
-        initColorButtons();
-        initSeekBars();
-        initSwitches();
-        initExitButton();
+        setupListeners();
     }
 
-    /**
-     * 加载已保存的设置
-     */
-    private void loadSettings() {
-        selectedColor = prefs.getInt("line_color", Color.GREEN);
-        compensationRatio = prefs.getInt("comp_ratio", 18);
-        bankCount = prefs.getInt("bank_count", 2);
-        lineThickness = prefs.getFloat("line_thickness", 5.0f);
-        antLineEnabled = prefs.getBoolean("ant_line", false);
-        adsorbEnabled = prefs.getBoolean("adsorb", true);
-        reflectMode = prefs.getInt("reflect_mode", 0);
-        tableCloth = prefs.getInt("table_cloth", 1);
-    }
-
-    /**
-     * 保存设置
-     */
-    private void saveSettings() {
-        prefs.edit()
-                .putInt("line_color", selectedColor)
-                .putInt("comp_ratio", compensationRatio)
-                .putInt("bank_count", bankCount)
-                .putFloat("line_thickness", lineThickness)
-                .putBoolean("ant_line", antLineEnabled)
-                .putBoolean("adsorb", adsorbEnabled)
-                .putInt("reflect_mode", reflectMode)
-                .putInt("table_cloth", tableCloth)
-                .apply();
-    }
-
-    // ===== 桌布选择 =====
-    private void initTableClothUI() {
+    private void initViews() {
         rgTableCloth = findViewById(R.id.rg_table_cloth);
-        if (rgTableCloth != null) {
-            int childCount = rgTableCloth.getChildCount();
-            if (tableCloth >= 0 && tableCloth < childCount) {
-                android.view.View v = rgTableCloth.getChildAt(tableCloth);
-                if (v instanceof RadioButton) ((RadioButton) v).setChecked(true);
+        rbCloth1 = findViewById(R.id.rb_cloth_1);
+        rbCloth2 = findViewById(R.id.rb_cloth_2);
+        rbCloth3 = findViewById(R.id.rb_cloth_3);
+
+        rgReflectMode = findViewById(R.id.rg_reflect_mode);
+        rbCompensation = findViewById(R.id.rb_compensation);
+        rbMirror = findViewById(R.id.rb_mirror);
+
+        seekCompRatio = findViewById(R.id.seek_comp_ratio);
+        tvCompRatio = findViewById(R.id.tv_comp_ratio);
+
+        seekBankCount = findViewById(R.id.seek_bank_count);
+        tvBankCount = findViewById(R.id.tv_bank_count);
+
+        seekLineThickness = findViewById(R.id.seek_line_thickness);
+        tvLineThickness = findViewById(R.id.tv_line_thickness);
+
+        swAntLine = findViewById(R.id.sw_ant_line);
+        swAdsorb = findViewById(R.id.sw_adsorb);
+
+        btnExitApp = findViewById(R.id.btn_exit_app);
+    }
+
+    private void loadSettings() {
+        App app = App.getInstance();
+
+        int clothType = app.getTableClothType();
+        switch (clothType) {
+            case 0: rbCloth1.setChecked(true); break;
+            case 1: rbCloth2.setChecked(true); break;
+            case 2: rbCloth3.setChecked(true); break;
+        }
+
+        int reflectMode = app.getReflectMode();
+        if (reflectMode == 0) {
+            rbCompensation.setChecked(true);
+        } else {
+            rbMirror.setChecked(true);
+        }
+
+        double ratio = app.getCompRatio();
+        int ratioInt = (int) (ratio * 100);
+        seekCompRatio.setProgress(ratioInt);
+        tvCompRatio.setText(String.format("%.2f", ratio));
+
+        int bankCount = app.getBankCount();
+        seekBankCount.setProgress(bankCount);
+        tvBankCount.setText(String.valueOf(bankCount));
+
+        float thickness = app.getLineThickness();
+        int thicknessInt = (int) thickness;
+        seekLineThickness.setProgress(thicknessInt);
+        tvLineThickness.setText(String.format("%.1f", thickness));
+
+        swAntLine.setChecked(app.isAntLineEnabled());
+        swAdsorb.setChecked(app.isAdsorbEnabled());
+    }
+
+    private void setupListeners() {
+        rgTableCloth.setOnCheckedChangeListener((group, checkedId) -> {
+            int type = 0;
+            if (checkedId == R.id.rb_cloth_1) type = 0;
+            else if (checkedId == R.id.rb_cloth_2) type = 1;
+            else if (checkedId == R.id.rb_cloth_3) type = 2;
+            App.getInstance().setTableClothType(type);
+            Toast.makeText(this, "已切换桌布", Toast.LENGTH_SHORT).show();
+        });
+
+        rgReflectMode.setOnCheckedChangeListener((group, checkedId) -> {
+            int mode = (checkedId == R.id.rb_compensation) ? 0 : 1;
+            App.getInstance().setReflectMode(mode);
+            String name = (mode == 0) ? "反射补偿" : "镜像反射";
+            Toast.makeText(this, "已切换到: " + name, Toast.LENGTH_SHORT).show();
+        });
+
+        seekCompRatio.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    double value = progress / 100.0;
+                    tvCompRatio.setText(String.format("%.2f", value));
+                    App.getInstance().setCompRatio(progress);
+                }
             }
-            rgTableCloth.setOnCheckedChangeListener((group, checkedId) -> {
-                int index = group.indexOfChild(group.findViewById(checkedId));
-                if (index >= 0) {
-                    tableCloth = index;
-                    saveSettings();
-                }
-            });
-        }
-    }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
-    // ===== 反射方案 =====
-    private void initReflectUI() {
-        rgReflect = findViewById(R.id.rg_reflect);
-        if (rgReflect != null) {
-            int childCount = rgReflect.getChildCount();
-            if (reflectMode >= 0 && reflectMode < childCount) {
-                android.view.View v = rgReflect.getChildAt(reflectMode);
-                if (v instanceof RadioButton) ((RadioButton) v).setChecked(true);
+        seekBankCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    tvBankCount.setText(String.valueOf(progress));
+                    App.getInstance().setBankCount(progress);
+                }
             }
-            rgReflect.setOnCheckedChangeListener((group, checkedId) -> {
-                int index = group.indexOfChild(group.findViewById(checkedId));
-                if (index >= 0) {
-                    reflectMode = index;
-                    saveSettings();
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        seekLineThickness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && progress > 0) {
+                    float value = progress;
+                    tvLineThickness.setText(String.format("%.1f", value));
+                    App.getInstance().setLineThickness(value);
                 }
-            });
-        }
-    }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
-    // ===== 颜色选择（10个色块） =====
-    private void initColorButtons() {
-        int[] btnIds = {
-                R.id.btn_color_0, R.id.btn_color_1, R.id.btn_color_2, R.id.btn_color_3,
-                R.id.btn_color_4, R.id.btn_color_5, R.id.btn_color_6, R.id.btn_color_7,
-                R.id.btn_color_8, R.id.btn_color_9
-        };
-        for (int i = 0; i < btnIds.length; i++) {
-            android.view.View view = findViewById(btnIds[i]);
-            if (view == null) continue;
-            view.setBackgroundColor(COLORS[i]);
-            final int color = COLORS[i];
-            view.setOnClickListener(v -> {
-                selectedColor = color;
-                saveSettings();
-                Toast.makeText(this, "颜色已切换", Toast.LENGTH_SHORT).show();
-            });
-        }
-    }
+        swAntLine.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            App.getInstance().setAntLineEnabled(isChecked);
+            Toast.makeText(this, isChecked ? "蚂蚁线已开启" : "蚂蚁线已关闭", Toast.LENGTH_SHORT).show();
+        });
 
-    // ===== 三个滑块 =====
-    private void initSeekBars() {
-        // 补偿比例 0~50，显示 0.00~0.50
-        tvCompValue = findViewById(R.id.tv_comp_value);
-        seekComp = findViewById(R.id.seek_comp);
-        if (seekComp != null && tvCompValue != null) {
-            seekComp.setMax(50);
-            seekComp.setProgress(compensationRatio);
-            tvCompValue.setText(String.format("%.2f", compensationRatio / 100.0));
-            seekComp.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                    compensationRatio = p;
-                    tvCompValue.setText(String.format("%.2f", p / 100.0));
-                }
-                @Override public void onStartTrackingTouch(SeekBar s) {}
-                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-            });
-        }
+        swAdsorb.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            App.getInstance().setAdsorbEnabled(isChecked);
+            Toast.makeText(this, isChecked ? "吸附已开启" : "吸附已关闭", Toast.LENGTH_SHORT).show();
+        });
 
-        // 翻袋库数 1~5
-        tvBankValue = findViewById(R.id.tv_bank_value);
-        seekBank = findViewById(R.id.seek_bank);
-        if (seekBank != null && tvBankValue != null) {
-            seekBank.setMax(5);
-            seekBank.setProgress(bankCount);
-            tvBankValue.setText(String.valueOf(bankCount));
-            seekBank.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                    bankCount = Math.max(1, p);
-                    tvBankValue.setText(String.valueOf(bankCount));
-                }
-                @Override public void onStartTrackingTouch(SeekBar s) {}
-                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-            });
-        }
-
-        // 线粗细 1~20，步长 0.5
-        tvThicknessValue = findViewById(R.id.tv_thickness_value);
-        seekThickness = findViewById(R.id.seek_thickness);
-        if (seekThickness != null && tvThicknessValue != null) {
-            seekThickness.setMax(40);
-            seekThickness.setProgress((int) (lineThickness * 2));
-            tvThicknessValue.setText(String.format("%.1f", lineThickness));
-            seekThickness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                    lineThickness = p / 2.0f;
-                    tvThicknessValue.setText(String.format("%.1f", lineThickness));
-                }
-                @Override public void onStartTrackingTouch(SeekBar s) {}
-                @Override public void onStopTrackingTouch(SeekBar s) { saveSettings(); }
-            });
-        }
-    }
-
-    // ===== 两个开关 =====
-    private void initSwitches() {
-        switchAntLine = findViewById(R.id.switch_ant_line);
-        switchAdsorb = findViewById(R.id.switch_adsorb);
-
-        if (switchAntLine != null) {
-            switchAntLine.setChecked(antLineEnabled);
-            switchAntLine.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                antLineEnabled = isChecked;
-                saveSettings();
-            });
-        }
-        if (switchAdsorb != null) {
-            switchAdsorb.setChecked(adsorbEnabled);
-            switchAdsorb.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                adsorbEnabled = isChecked;
-                saveSettings();
-            });
-        }
-    }
-
-    // ===== 退出应用 =====
-    private void initExitButton() {
-        btnExit = findViewById(R.id.btn_exit_app);
-        if (btnExit != null) {
-            btnExit.setOnClickListener(v -> {
-                // 停止所有服务
-                stopService(new Intent(this, com.example.billiardassist.service.FloatingService.class));
-                stopService(new Intent(this, com.example.billiardassist.service.CaptureService.class));
-                finishAffinity(); // 关闭所有 Activity
-            });
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        saveSettings();
+        btnExitApp.setOnClickListener(v -> {
+            finishAffinity();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(0);
+        });
     }
 }
