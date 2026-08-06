@@ -2,18 +2,18 @@
 <resources>
     <string name="app_name">灵喵</string>
     <string name="start_service">启动辅助服务</string>
-    <string name="status_active">已激活</string>
-    <string name="status_inactive">未激活</string>
+    <string name="status_active">✅ 已激活</string>
+    <string name="status_inactive">⚠️ 未激活</string>
     <string name="btn_horizontal">横版进</string>
     <string name="btn_vertical">竖版进</string>
-    <string name="usage_title">使用说明</string>
+    <string name="usage_title">📖 使用说明</string>
     <string name="usage_1">1. 如果截图权限按应用单独授权，请选择你当前正在运行的台球游戏。</string>
     <string name="usage_2">2. 桌布请尽量精确对齐球桌内缘，辅助线会更稳定。</string>
     <string name="usage_3">3. 系统设置相关入口已放在下方，需要时再手动处理即可。</string>
-    <string name="system_settings">系统设置建议</string>
+    <string name="system_settings">⚙️ 系统设置建议</string>
     <string name="system_settings_desc">为避免悬浮服务被系统回收，建议你在需要时手动加入电池优化白名单或前往应用设置页。</string>
-    <string name="btn_battery">电池优</string>
-    <string name="btn_app_settings">应用系</string>
+    <string name="btn_battery">🔋 电池优化</string>
+    <string name="btn_app_settings">📱 应用设置</string>
     <string name="floating_assist">Floating Assist</string>
     <string name="launch_floating">启动悬浮辅助</string>
     <string name="launch_desc_vertical">当前将以竖版方式启动悬浮辅助，完成必要授权后即可直接进入。</string>
@@ -58,4 +58,11 @@
     <string name="screen_record_desc">录制或共享屏幕时，灵喵将获取您所选应用内的所有内容，包括音频、密码、通知等敏感信息。</string>
     <string name="screen_record_range">共享或录制的范围</string>
     <string name="screen_record_continue">继续</string>
+
+    <!-- ✅ 新增：Toast 消息字符串 -->
+    <string name="toast_request_overlay">请授予悬浮窗权限</string>
+    <string name="toast_starting_horizontal">正在启动横版模式...</string>
+    <string name="toast_starting_vertical">正在启动竖版模式...</string>
+    <string name="toast_permission_granted">✅ 悬浮窗权限已授予</string>
+    <string name="toast_permission_denied">❌ 悬浮窗权限被拒绝</string>
 </resources>
