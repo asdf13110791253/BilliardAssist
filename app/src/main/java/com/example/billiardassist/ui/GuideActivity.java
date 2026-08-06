@@ -25,7 +25,7 @@ public class GuideActivity extends AppCompatActivity {
     private TextView tvStatus;
     private Button btnHorizontal, btnVertical;
     private Button btnBattery, btnAppSettings;
-    private Button btnSettings;  // ✅ 新增：设置按钮
+    private Button btnSettings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +61,7 @@ public class GuideActivity extends AppCompatActivity {
         btnVertical = findViewById(R.id.btn_vertical);
         btnBattery = findViewById(R.id.btn_battery);
         btnAppSettings = findViewById(R.id.btn_app_settings);
-        btnSettings = findViewById(R.id.btn_settings);  // ✅ 新增
+        btnSettings = findViewById(R.id.btn_settings);
     }
 
     private void setupListeners() {
@@ -70,8 +70,11 @@ public class GuideActivity extends AppCompatActivity {
                 Toast.makeText(this, "OpenCV未就绪", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (hasOverlayPermission()) launchService(MODE_HORIZONTAL);
-            else requestOverlayPermission();
+            if (hasOverlayPermission()) {
+                launchService(MODE_HORIZONTAL);
+            } else {
+                requestOverlayPermission();
+            }
         });
 
         btnVertical.setOnClickListener(v -> {
@@ -79,8 +82,11 @@ public class GuideActivity extends AppCompatActivity {
                 Toast.makeText(this, "OpenCV未就绪", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (hasOverlayPermission()) launchService(MODE_VERTICAL);
-            else requestOverlayPermission();
+            if (hasOverlayPermission()) {
+                launchService(MODE_VERTICAL);
+            } else {
+                requestOverlayPermission();
+            }
         });
 
         btnBattery.setOnClickListener(v -> {
@@ -101,7 +107,6 @@ public class GuideActivity extends AppCompatActivity {
             }
         });
 
-        // ✅ 新增：设置按钮点击事件
         btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
