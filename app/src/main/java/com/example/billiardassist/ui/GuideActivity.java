@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.billiardassist.App;
 import com.example.billiardassist.R;
 import com.example.billiardassist.service.CapturePermissionActivity;
+import com.example.billiardassist.service.MusicService;
 import org.opencv.android.OpenCVLoader;
 
 public class GuideActivity extends AppCompatActivity {
@@ -47,12 +48,26 @@ public class GuideActivity extends AppCompatActivity {
             enableModeButtons(false);
             Toast.makeText(this, "请检查依赖后重启APP", Toast.LENGTH_SHORT).show();
         }
+
+        // 🎵 启动背景音乐
+        if (App.getInstance().isMusicEnabled()) {
+            Intent musicIntent = new Intent(this, MusicService.class);
+            startService(musicIntent);
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         checkOverlayPermission();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 停止背景音乐
+        Intent musicIntent = new Intent(this, MusicService.class);
+        stopService(musicIntent);
     }
 
     private void initViews() {
