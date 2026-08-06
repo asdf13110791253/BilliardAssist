@@ -11,7 +11,6 @@ import com.example.billiardassist.App;
 
 /**
  * 录屏授权中转 Activity（透明）
- * 修复：启动 FloatingService 而不是 CaptureService
  */
 public class CapturePermissionActivity extends Activity {
 
@@ -49,13 +48,14 @@ public class CapturePermissionActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE) {
-            // ✅ 修复：启动 FloatingService
+            // ✅ 保存录屏数据到App
+            if (resultCode == RESULT_OK && data != null) {
+                App.getInstance().setMediaProjectionData(resultCode, data);
+            }
+
             Intent serviceIntent = new Intent(this, FloatingService.class);
 
             if (resultCode == RESULT_OK && data != null) {
-                // 保存录屏数据到App全局
-                App.getInstance().setMediaProjectionData(resultCode, data);
-
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(serviceIntent);
@@ -66,7 +66,6 @@ public class CapturePermissionActivity extends Activity {
                     e.printStackTrace();
                 }
             } else {
-                // 用户拒绝
                 serviceIntent.setAction("STOP");
                 try {
                     startService(serviceIntent);
