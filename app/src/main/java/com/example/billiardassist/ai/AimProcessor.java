@@ -69,9 +69,10 @@ public class AimProcessor {
     public int getScheme() { return currentScheme; }
     public int getReflectMode() { return reflectMode; }
 
+    // ✅ 修复：detectAimCenter -> detectCueBall
     public Point processFrame(@NonNull Bitmap screenBitmap) {
         if (screenBitmap.isRecycled() || aimDetector == null) return null;
-        return aimDetector.detectAimCenter(screenBitmap);
+        return aimDetector.detectCueBall(screenBitmap);
     }
 
     public double[] calculateAimLine(float cueX, float cueY, float targetX, float targetY,
