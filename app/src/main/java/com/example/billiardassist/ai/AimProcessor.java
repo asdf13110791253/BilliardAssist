@@ -10,9 +10,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-/**
- * 图像处理与瞄准计算核心
- */
 public class AimProcessor {
 
     private static final String TAG = "AimProcessor";
@@ -69,7 +66,6 @@ public class AimProcessor {
     public int getScheme() { return currentScheme; }
     public int getReflectMode() { return reflectMode; }
 
-    // ✅ 修复：detectAimCenter -> detectCueBall
     public Point processFrame(@NonNull Bitmap screenBitmap) {
         if (screenBitmap.isRecycled() || aimDetector == null) return null;
         return aimDetector.detectCueBall(screenBitmap);
@@ -140,9 +136,6 @@ public class AimProcessor {
         }
     }
 
-    /**
-     * 应用 HSV 阈值过滤 - 完整修复版
-     */
     public Bitmap applyHSVFilter(@NonNull Bitmap input) {
         if (input.isRecycled() || input.getWidth() <= 0 || input.getHeight() <= 0) {
             return input;
@@ -155,7 +148,6 @@ public class AimProcessor {
             hsv = new Mat();
             Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGB2HSV);
 
-            // V通道阈值过滤
             Scalar lower = new Scalar(0, 0, vValue);
             Scalar upper = new Scalar(180, 255, 255);
             mask = new Mat();
