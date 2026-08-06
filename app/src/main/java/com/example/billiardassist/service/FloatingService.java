@@ -32,9 +32,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.List;
 
-/**
- * 悬浮窗服务 - 负责在屏幕上绘制辅助线
- */
 public class FloatingService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
@@ -46,17 +43,14 @@ public class FloatingService extends Service {
     private Paint paintGreen, paintRed, paintYellow;
     private int screenWidth, screenHeight;
 
-    // 配置
     private int lineColor = Color.GREEN;
     private float lineThickness = 5.0f;
     private boolean showAntLine = false;
 
-    // ===== 温度控制 =====
+    // 温度控制
     private int frameCount = 0;
     private boolean isCharging = false;
-    private float currentTemp = 0f;
-
-    // 温度阈值：超过35°C降30帧
+    private float currentTemp = 35.0f;
     private static final float TEMP_HIGH = 35.0f;
 
     @Override
@@ -76,7 +70,6 @@ public class FloatingService extends Service {
         }
 
         startForeground(NOTIFICATION_ID, buildNotification());
-
         initOverlayWindow();
         startDrawingLoop();
 
@@ -128,53 +121,50 @@ public class FloatingService extends Service {
         }
     }
 
-    // ===== 读取手机温度 =====
+    // ✅ 修复：兼容API 33的温度读取
     private float getBatteryTemperature() {
         try {
-            android.os.BatteryManager batteryManager = 
-                (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
-            if (batteryManager != null) {
-                int temp = batteryManager.getIntProperty(
-                    android.os.BatteryManager.BATTERY_PROPERTY_TEMPERATURE
-                );
-                return temp / 10.0f;
+            // 尝试读取系统温度文件
+            String[] paths = {
+                "/sys/class/thermal/thermal_zone0/temp",
+                "/sys/class/power_supply/battery/temp",
+                "/sys/class/power_supply/battery/batt_temp"
+            };
+            for (String path : paths) {
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(path));
+                    String line = reader.readLine();
+                    reader.close();
+                    if (line != null) {
+                        float temp = Float.parseFloat(line.trim());
+                        if (temp > 1000) {
+                            temp = temp / 1000.0f;
+                        }
+                        return temp;
+                    }
+                } catch (Exception ignored) {}
             }
         } catch (Exception e) {
-            try {
-                BufferedReader reader = new BufferedReader(
-                    new FileReader("/sys/class/thermal/thermal_zone0/temp")
-                );
-                String line = reader.readLine();
-                reader.close();
-                if (line != null) {
-                    float temp = Float.parseFloat(line) / 1000.0f;
-                    return temp;
-                }
-            } catch (Exception ignored) {}
+            e.printStackTrace();
         }
         return 35.0f;
     }
 
-    // ===== 智能计算刷新率 =====
     private int calculateSmartDelay() {
         currentTemp = getBatteryTemperature();
 
-        // 1. 充电时60帧
         if (isCharging) {
             return 16;
         }
 
-        // 2. 温度超过35°C → 30帧（降频降温）
         if (currentTemp >= TEMP_HIGH) {
             return 33;
         }
 
-        // 3. 前30帧60帧（快速响应）
         if (frameCount < 30) {
             return 16;
         }
 
-        // 4. 温度正常 → 60帧
         return 16;
     }
 
@@ -238,20 +228,15 @@ public class FloatingService extends Service {
             public void run() {
                 drawGuideLines(screenWidth / 2, screenHeight / 2);
                 frameCount++;
-
                 int delay = calculateSmartDelay();
                 mainHandler.postDelayed(this, delay);
             }
         });
     }
 
-    /**
-     * 绘制辅助线 - 完整版（含AI辅助）
-     */
     public void drawGuideLines(int cx, int cy) {
         if (overlayView == null || cx < 0 || cy < 0 || screenWidth <= 0 || screenHeight <= 0) return;
 
-        // 回收旧Bitmap
         try {
             if (overlayView.getDrawable() instanceof BitmapDrawable) {
                 Bitmap oldBitmap = ((BitmapDrawable) overlayView.getDrawable()).getBitmap();
@@ -273,15 +258,12 @@ public class FloatingService extends Service {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        // ===== 基础辅助线（十字准星 + 瞄准圈） =====
         canvas.drawLine(0, cy, screenWidth, cy, paintGreen);
         canvas.drawLine(cx, 0, cx, screenHeight, paintGreen);
         canvas.drawCircle(cx, cy, 60, paintRed);
 
-        // ===== AI辅助绘制 =====
         AimAssistManager aimManager = AimAssistManager.getInstance();
 
-        // 1. 获取AI推荐瞄准点
         android.graphics.Point aimPoint = aimManager.getRecommendedAimPoint();
         if (aimPoint != null) {
             Paint aimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -291,21 +273,17 @@ public class FloatingService extends Service {
             DrawUtils.drawAimLine(canvas, new android.graphics.Point(cx, cy), aimPoint);
         }
 
-        // 2. 绘制走位预测
         List<android.graphics.Point> path = aimManager.getPredictedPath();
         if (path != null && !path.isEmpty()) {
             DrawUtils.drawPath(canvas, path);
         }
 
-        // 3. 绘制力度条（右下角）
         int power = aimManager.calculatePower();
         DrawUtils.drawPowerBar(canvas, screenWidth - 250, screenHeight - 60, power, 150);
 
-        // 4. 绘制角度指示器
         double angle = aimManager.calculateBestAngle();
         DrawUtils.drawAngleIndicator(canvas, new android.graphics.Point(cx, cy), angle, 80);
 
-        // 5. 显示辅助信息（左上角）
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(20);
@@ -313,7 +291,6 @@ public class FloatingService extends Service {
         String info = "角度: " + String.format("%.1f", angle) + "° | 力度: " + power + "%";
         canvas.drawText(info, 20, 60, textPaint);
 
-        // 6. 显示是否可进球
         Paint shotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         shotPaint.setTextSize(24);
         shotPaint.setAlpha(200);
@@ -325,14 +302,12 @@ public class FloatingService extends Service {
             canvas.drawText("⚠️ 调整角度", 20, 100, shotPaint);
         }
 
-        // 7. 绘制准星
         DrawUtils.drawCrosshair(canvas, new android.graphics.Point(cx, cy), 100);
 
-        // 8. 中心红点
         paintRed.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, 10, paintRed);
 
-        // 9. 🆕 显示温度（左上角，方便查看）
+        // 显示温度
         Paint tempPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         tempPaint.setColor(currentTemp >= TEMP_HIGH ? Color.RED : Color.GREEN);
         tempPaint.setTextSize(16);
