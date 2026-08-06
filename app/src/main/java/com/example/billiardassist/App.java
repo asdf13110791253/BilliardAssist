@@ -21,6 +21,8 @@ public class App extends Application {
 
     private static App instance;
     private boolean isOpenCVInitSuccess = false;
+
+    // ==================== 录屏数据存储 ====================
     private int mediaProjectionResultCode;
     private Intent mediaProjectionData;
 
@@ -29,7 +31,7 @@ public class App extends Application {
         super.onCreate();
         instance = this;
 
-        // ✅ 初始化崩溃捕获
+        // 崩溃捕获
         CrashHandler.getInstance().init(this);
 
         initDefaultSettings();
@@ -54,6 +56,7 @@ public class App extends Application {
         return mediaProjectionData;
     }
 
+    // ==================== 初始化默认配置 ====================
     private void initDefaultSettings() {
         SharedPreferences settingsPrefs = getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
         if (settingsPrefs.getAll().isEmpty()) {
@@ -90,6 +93,7 @@ public class App extends Application {
         }
     }
 
+    // ==================== 前台服务通知渠道 ====================
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -108,6 +112,7 @@ public class App extends Application {
         }
     }
 
+    // ==================== OpenCV状态管理 ====================
     public void setOpenCVInitSuccess(boolean success) {
         this.isOpenCVInitSuccess = success;
     }
@@ -116,6 +121,7 @@ public class App extends Application {
         return isOpenCVInitSuccess;
     }
 
+    // ==================== 通用设置 Getter/Setter ====================
     public int getLineColor() {
         return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
                 .getInt("line_color", Color.GREEN);
@@ -213,6 +219,7 @@ public class App extends Application {
                 .apply();
     }
 
+    // ==================== 瞄准参数 Getter/Setter ====================
     public int getCurrentAimScheme() {
         return getSharedPreferences(PREFS_AIM, MODE_PRIVATE)
                 .getInt("scheme", 0);
