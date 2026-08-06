@@ -2,6 +2,7 @@ package com.example.billiardassist.ai;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -20,6 +21,8 @@ import org.opencv.imgproc.Imgproc;
  * - 计算辅助线角度（角度补偿 / 镜像反射）
  */
 public class AimProcessor {
+
+    private static final String TAG = "AimProcessor";
 
     // ===== 8 种识别方案 =====
     public static final int SCHEME_0 = 0; // 零一：标准台球
@@ -179,6 +182,7 @@ public class AimProcessor {
 
     /**
      * 应用 HSV 阈值过滤（用于白球/目标球检测）
+     * 修复：COLOR_RGBA2HSV -> COLOR_RGB2HSV，补全完整逻辑
      */
     public Bitmap applyHSVFilter(@NonNull Bitmap input) {
         if (input.isRecycled() || input.getWidth() <= 0 || input.getHeight() <= 0) {
@@ -190,24 +194,27 @@ public class AimProcessor {
             src = new Mat();
             Utils.bitmapToMat(input, src);
             
-            // 转HSV色彩空间
+            // 转HSV色彩空间 - 修复：使用 COLOR_RGB2HSV
             hsv = new Mat();
-            Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGBA2HSV);
+            Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGB2HSV);
 
             // V通道阈值过滤（H:0-180, S:0-255, V:0-255）
+            // 使用V值作为亮度阈值
+            Scalar lower = new Scalar(0, 0, vValue);
+            Scalar upper = new Scalar(180, 255, 255);
             mask = new Mat();
-            Core.inRange(hsv, new Scalar(0, 0, vValue), new Scalar(180, 255, 255), mask);
-
-            // 提取符合阈值的区域
+            Core.inRange(hsv, lower, upper, mask);
+            
             result = new Mat();
-            src.copyTo(result, mask);
-
-            // 转回Bitmap
-            Bitmap out = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(result, out);
-            return out;
+            Core.bitwise_and(src, src, result, mask);
+            
+            Bitmap output = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(result, output);
+            return output;
+        } catch (Exception e) {
+            Log.e(TAG, "HSV过滤失败", e);
+            return input;
         } finally {
-            // 确保Mat资源释放，避免内存泄漏
             if (src != null) src.release();
             if (hsv != null) hsv.release();
             if (mask != null) mask.release();
