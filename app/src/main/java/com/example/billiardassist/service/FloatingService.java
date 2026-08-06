@@ -54,12 +54,11 @@ public class FloatingService extends Service {
     private float currentTemp = 35.0f;
     private static final float TEMP_HIGH = 35.0f;
 
-    // ===== 模拟球（演示用） =====
+    // 模拟球
     private float demoCueX, demoCueY;
     private float demoTargetX, demoTargetY;
     private float demoPocketX, demoPocketY;
     private int demoStep = 0;
-    private boolean demoMode = false;
 
     @Override
     public void onCreate() {
@@ -79,10 +78,7 @@ public class FloatingService extends Service {
 
         startForeground(NOTIFICATION_ID, buildNotification());
         initOverlayWindow();
-
-        // 显示启动提示
         Toast.makeText(this, "✅ 辅助服务已启动", Toast.LENGTH_SHORT).show();
-
         startDrawingLoop();
         return START_STICKY;
     }
@@ -127,8 +123,7 @@ public class FloatingService extends Service {
 
     private void checkChargingStatus() {
         try {
-            android.os.BatteryManager batteryManager =
-                (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+            android.os.BatteryManager batteryManager = (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
             if (batteryManager != null) {
                 isCharging = batteryManager.isCharging();
             }
@@ -151,7 +146,9 @@ public class FloatingService extends Service {
                     reader.close();
                     if (line != null) {
                         float temp = Float.parseFloat(line.trim());
-                        if (temp > 1000) temp = temp / 1000.0f;
+                        if (temp > 1000) {
+                            temp = temp / 1000.0f;
+                        }
                         return temp;
                     }
                 } catch (Exception ignored) {}
@@ -190,12 +187,12 @@ public class FloatingService extends Service {
             screenHeight = metrics.heightPixels;
         }
 
-        // 初始化演示球位置
-        demoCueX = screenWidth * 0.3f;
+        // 初始化模拟球位置
+        demoCueX = screenWidth * 0.25f;
         demoCueY = screenHeight * 0.7f;
-        demoTargetX = screenWidth * 0.55f;
+        demoTargetX = screenWidth * 0.5f;
         demoTargetY = screenHeight * 0.45f;
-        demoPocketX = screenWidth * 0.85f;
+        demoPocketX = screenWidth * 0.8f;
         demoPocketY = screenHeight * 0.15f;
 
         floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating, null);
@@ -235,13 +232,13 @@ public class FloatingService extends Service {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                // 更新演示球位置（缓慢移动）
+                // 模拟球运动
                 demoStep++;
                 if (demoStep > 200) demoStep = 0;
                 double angle = demoStep * 0.03;
-                demoTargetX = screenWidth * 0.55f + (float) (Math.cos(angle) * 80);
+                demoTargetX = screenWidth * 0.5f + (float) (Math.cos(angle) * 80);
                 demoTargetY = screenHeight * 0.45f + (float) (Math.sin(angle * 0.7) * 60);
-                demoPocketX = screenWidth * 0.85f + (float) (Math.sin(angle * 0.5) * 40);
+                demoPocketX = screenWidth * 0.8f + (float) (Math.sin(angle * 0.5) * 40);
                 demoPocketY = screenHeight * 0.15f + (float) (Math.cos(angle * 0.6) * 30);
 
                 drawGuideLines(screenWidth / 2, screenHeight / 2);
@@ -276,7 +273,7 @@ public class FloatingService extends Service {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        // ===== 1. 绘制基础十字准星 =====
+        // 十字准星
         Paint crossPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         crossPaint.setColor(Color.GREEN);
         crossPaint.setStrokeWidth(2);
@@ -285,7 +282,6 @@ public class FloatingService extends Service {
         canvas.drawLine(cx, 0, cx, screenHeight, crossPaint);
         canvas.drawCircle(cx, cy, 60, paintRed);
 
-        // ===== 2. 绘制模拟球 =====
         Paint ballPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
@@ -322,7 +318,7 @@ public class FloatingService extends Service {
         canvas.drawCircle(demoPocketX, demoPocketY, 18, ballPaint);
         canvas.drawText("⚫ 袋口", demoPocketX - 30, demoPocketY - 30, textPaint);
 
-        // ===== 3. 绘制瞄准线 =====
+        // 瞄准线
         Paint aimLine = new Paint(Paint.ANTI_ALIAS_FLAG);
         aimLine.setColor(Color.GREEN);
         aimLine.setStyle(Paint.Style.STROKE);
@@ -330,7 +326,7 @@ public class FloatingService extends Service {
         aimLine.setAlpha(200);
         canvas.drawLine(demoCueX, demoCueY, demoTargetX, demoTargetY, aimLine);
 
-        // 目标球到袋口（紫色虚线）
+        // 进球路线
         Paint pocketLine = new Paint(Paint.ANTI_ALIAS_FLAG);
         pocketLine.setColor(Color.rgb(200, 100, 255));
         pocketLine.setStyle(Paint.Style.STROKE);
@@ -338,7 +334,7 @@ public class FloatingService extends Service {
         pocketLine.setAlpha(180);
         canvas.drawLine(demoTargetX, demoTargetY, demoPocketX, demoPocketY, pocketLine);
 
-        // ===== 4. 瞄准点（粉色） =====
+        // 瞄准点
         float dx = demoPocketX - demoTargetX;
         float dy = demoPocketY - demoTargetY;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
@@ -355,13 +351,12 @@ public class FloatingService extends Service {
             canvas.drawText("🎯 瞄准点", aimX - 30, aimY - 25, textPaint);
         }
 
-        // ===== 5. 走位预测（蓝色虚线） =====
+        // 走位预测
         Paint pathPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         pathPaint.setColor(Color.CYAN);
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeWidth(3);
         pathPaint.setAlpha(150);
-        // 简单走位预测：从目标球延伸
         for (int i = 1; i <= 4; i++) {
             int step = i * 30;
             float px = demoTargetX + (demoPocketX - demoTargetX) / len * step;
@@ -374,29 +369,28 @@ public class FloatingService extends Service {
             }
         }
 
-        // ===== 6. 十字准星中心 =====
+        // 中心红点
         paintRed.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, 8, paintRed);
 
-        // ===== 7. 显示信息 =====
+        // 信息显示
         Paint infoPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         infoPaint.setColor(Color.WHITE);
         infoPaint.setTextSize(20);
         infoPaint.setAlpha(220);
-
         double angle = Math.toDegrees(Math.atan2(demoPocketY - demoTargetY, demoPocketX - demoTargetX));
         canvas.drawText("🎱 台球辅助瞄准", 20, 50, infoPaint);
         canvas.drawText("📐 角度: " + String.format("%.1f", angle) + "°", 20, 90, infoPaint);
         canvas.drawText("💪 力度: 65%", 20, 130, infoPaint);
 
-        // ===== 8. 温度显示 =====
+        // 温度
         Paint tempPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         tempPaint.setColor(currentTemp >= TEMP_HIGH ? Color.RED : Color.GREEN);
         tempPaint.setTextSize(16);
         tempPaint.setAlpha(200);
         canvas.drawText("🌡️ " + String.format("%.1f", currentTemp) + "°C", 20, 170, tempPaint);
 
-        // ===== 9. 可进球提示 =====
+        // 可进球
         Paint shotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         shotPaint.setTextSize(24);
         shotPaint.setAlpha(200);
