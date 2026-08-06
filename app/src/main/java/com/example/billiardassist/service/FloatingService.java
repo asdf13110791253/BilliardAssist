@@ -28,6 +28,8 @@ import com.example.billiardassist.R;
 import com.example.billiardassist.ai.AimAssistManager;
 import com.example.billiardassist.utils.DrawUtils;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.List;
 
 /**
@@ -49,12 +51,21 @@ public class FloatingService extends Service {
     private float lineThickness = 5.0f;
     private boolean showAntLine = false;
 
+    // ===== 温度控制 =====
+    private int frameCount = 0;
+    private boolean isCharging = false;
+    private float currentTemp = 0f;
+
+    // 温度阈值：超过35°C降30帧
+    private static final float TEMP_HIGH = 35.0f;
+
     @Override
     public void onCreate() {
         super.onCreate();
         mainHandler = new Handler(Looper.getMainLooper());
         loadSettings();
         initPaints();
+        checkChargingStatus();
     }
 
     @Override
@@ -103,6 +114,68 @@ public class FloatingService extends Service {
         paintYellow.setColor(Color.YELLOW);
         paintYellow.setStrokeWidth(3);
         paintYellow.setStyle(Paint.Style.STROKE);
+    }
+
+    private void checkChargingStatus() {
+        try {
+            android.os.BatteryManager batteryManager = 
+                (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+            if (batteryManager != null) {
+                isCharging = batteryManager.isCharging();
+            }
+        } catch (Exception e) {
+            isCharging = false;
+        }
+    }
+
+    // ===== 读取手机温度 =====
+    private float getBatteryTemperature() {
+        try {
+            android.os.BatteryManager batteryManager = 
+                (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+            if (batteryManager != null) {
+                int temp = batteryManager.getIntProperty(
+                    android.os.BatteryManager.BATTERY_PROPERTY_TEMPERATURE
+                );
+                return temp / 10.0f;
+            }
+        } catch (Exception e) {
+            try {
+                BufferedReader reader = new BufferedReader(
+                    new FileReader("/sys/class/thermal/thermal_zone0/temp")
+                );
+                String line = reader.readLine();
+                reader.close();
+                if (line != null) {
+                    float temp = Float.parseFloat(line) / 1000.0f;
+                    return temp;
+                }
+            } catch (Exception ignored) {}
+        }
+        return 35.0f;
+    }
+
+    // ===== 智能计算刷新率 =====
+    private int calculateSmartDelay() {
+        currentTemp = getBatteryTemperature();
+
+        // 1. 充电时60帧
+        if (isCharging) {
+            return 16;
+        }
+
+        // 2. 温度超过35°C → 30帧（降频降温）
+        if (currentTemp >= TEMP_HIGH) {
+            return 33;
+        }
+
+        // 3. 前30帧60帧（快速响应）
+        if (frameCount < 30) {
+            return 16;
+        }
+
+        // 4. 温度正常 → 60帧
+        return 16;
     }
 
     private void initOverlayWindow() {
@@ -159,11 +232,15 @@ public class FloatingService extends Service {
     }
 
     private void startDrawingLoop() {
+        frameCount = 0;
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
                 drawGuideLines(screenWidth / 2, screenHeight / 2);
-                mainHandler.postDelayed(this, 16);
+                frameCount++;
+
+                int delay = calculateSmartDelay();
+                mainHandler.postDelayed(this, delay);
             }
         });
     }
@@ -254,6 +331,14 @@ public class FloatingService extends Service {
         // 8. 中心红点
         paintRed.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, 10, paintRed);
+
+        // 9. 🆕 显示温度（左上角，方便查看）
+        Paint tempPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        tempPaint.setColor(currentTemp >= TEMP_HIGH ? Color.RED : Color.GREEN);
+        tempPaint.setTextSize(16);
+        tempPaint.setAlpha(200);
+        String tempInfo = "🌡️ " + String.format("%.1f", currentTemp) + "°C";
+        canvas.drawText(tempInfo, 20, 140, tempPaint);
 
         overlayView.setImageBitmap(bitmap);
     }
