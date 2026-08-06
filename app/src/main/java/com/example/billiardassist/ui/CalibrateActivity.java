@@ -13,8 +13,9 @@ import com.example.billiardassist.ai.AimProcessor;
 
 /**
  * 图像识别方案选择界面
+ * 修复：类名改为 CalibrateActivity
  */
-public class AimSchemeActivity extends AppCompatActivity {
+public class CalibrateActivity extends AppCompatActivity {
 
     private AimProcessor aimProcessor;
 
