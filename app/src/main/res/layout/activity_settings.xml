@@ -20,6 +20,7 @@
             android:textStyle="bold"
             android:layout_marginBottom="24dp" />
 
+        <!-- 桌布 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -63,6 +64,7 @@
                 android:buttonTint="#FFD4A017" />
         </RadioGroup>
 
+        <!-- 反射方案 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -99,6 +101,7 @@
                 android:buttonTint="#FFD4A017" />
         </RadioGroup>
 
+        <!-- 补偿比例 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -132,6 +135,7 @@
                 android:gravity="center" />
         </LinearLayout>
 
+        <!-- 翻袋库数 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -165,6 +169,7 @@
                 android:gravity="center" />
         </LinearLayout>
 
+        <!-- 辅助线粗细 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -198,6 +203,7 @@
                 android:gravity="center" />
         </LinearLayout>
 
+        <!-- 开关 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -243,6 +249,31 @@
                 android:checked="true" />
         </LinearLayout>
 
+        <!-- 🎵 背景音乐 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🎵 背景音乐"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/sw_music"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:thumbTint="#FFD4A017"
+                android:trackTint="#666666"
+                android:checked="true" />
+        </LinearLayout>
+
+        <!-- 退出按钮 -->
         <Button
             android:id="@+id/btn_exit_app"
             android:layout_width="match_parent"
