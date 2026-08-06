@@ -3,30 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.billiardassist">
 
-    <!-- ==================== 核心权限 ==================== -->
-    <!-- 悬浮窗权限（必须，核心功能依赖） -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    
-    <!-- 前台服务权限（Android 9+ 必须，保持服务后台运行） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    
-    <!-- 媒体投影前台服务类型（Android 10+ 必须，录屏/悬浮窗依赖） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    
-    <!-- 基础权限 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
-    <!-- 忽略电池优化（避免后台被系统杀死） -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    
-    <!-- ✅ 剪贴板权限（崩溃日志自动复制需要） -->
     <uses-permission android:name="android.permission.READ_CLIPBOARD" />
     <uses-permission android:name="android.permission.WRITE_CLIPBOARD" />
-    
-    <!-- Android 13+ 通知权限（前台服务必须） -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"
-        tools:targetApi="33" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:targetApi="33" />
 
     <application
         android:name=".App"
@@ -38,7 +23,6 @@
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
 
-        <!-- ==================== 启动页 ==================== -->
         <activity
             android:name=".ui.GuideActivity"
             android:exported="true"
@@ -50,33 +34,12 @@
             </intent-filter>
         </activity>
 
-        <!-- ==================== ❌ 删除 MainActivity ==================== -->
-        <!--
-        <activity
-            android:name=".MainActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-        -->
-
-        <!-- ==================== 待实现功能页（暂时注释） ==================== -->
-        <!--
-        <activity
-            android:name=".ui.CalibrateActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
+        <!-- ✅ 新增：设置页面 -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <activity
-            android:name=".ui.AimSchemeActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-        -->
-
-        <!-- ==================== 录屏授权中转 ==================== -->
         <activity
             android:name=".service.CapturePermissionActivity"
             android:exported="false"
@@ -85,23 +48,18 @@
             android:taskAffinity=""
             android:noHistory="true" />
 
-        <!-- ==================== 核心服务 ==================== -->
-        <!-- 录屏采集服务 -->
         <service
             android:name=".service.CaptureService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
 
-        <!-- 悬浮窗绘制服务（核心功能） -->
         <service
             android:name=".service.FloatingService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
 
-        <!-- ==================== 广播接收器 ==================== -->
-        <!-- 电池优化监听 -->
         <receiver
             android:name=".receiver.BatteryReceiver"
             android:exported="false"
@@ -114,7 +72,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- 开机自启（默认关闭） -->
         <receiver
             android:name=".receiver.BootReceiver"
             android:exported="false"
@@ -126,7 +83,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- ==================== 文件共享配置 ==================== -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
