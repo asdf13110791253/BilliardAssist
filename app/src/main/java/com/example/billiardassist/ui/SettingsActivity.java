@@ -1,5 +1,6 @@
 package com.example.billiardassist.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.RadioButton;
@@ -13,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.billiardassist.App;
 import com.example.billiardassist.R;
+import com.example.billiardassist.service.MusicService;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -33,6 +35,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private Switch swAntLine;
     private Switch swAdsorb;
+    private Switch swMusic;  // 🎵
 
     private Button btnExitApp;
 
@@ -67,6 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         swAntLine = findViewById(R.id.sw_ant_line);
         swAdsorb = findViewById(R.id.sw_adsorb);
+        swMusic = findViewById(R.id.sw_music);  // 🎵
 
         btnExitApp = findViewById(R.id.btn_exit_app);
     }
@@ -104,6 +108,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         swAntLine.setChecked(app.isAntLineEnabled());
         swAdsorb.setChecked(app.isAdsorbEnabled());
+        swMusic.setChecked(app.isMusicEnabled());  // 🎵
     }
 
     private void setupListeners() {
@@ -169,6 +174,20 @@ public class SettingsActivity extends AppCompatActivity {
         swAdsorb.setOnCheckedChangeListener((buttonView, isChecked) -> {
             App.getInstance().setAdsorbEnabled(isChecked);
             Toast.makeText(this, isChecked ? "吸附已开启" : "吸附已关闭", Toast.LENGTH_SHORT).show();
+        });
+
+        // 🎵 背景音乐开关
+        swMusic.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            App.getInstance().setMusicEnabled(isChecked);
+            if (isChecked) {
+                Intent musicIntent = new Intent(this, MusicService.class);
+                startService(musicIntent);
+                Toast.makeText(this, "🎵 音乐已开启", Toast.LENGTH_SHORT).show();
+            } else {
+                Intent musicIntent = new Intent(this, MusicService.class);
+                stopService(musicIntent);
+                Toast.makeText(this, "🔇 音乐已关闭", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnExitApp.setOnClickListener(v -> {
