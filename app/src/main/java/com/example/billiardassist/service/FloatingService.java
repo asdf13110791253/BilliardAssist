@@ -25,6 +25,10 @@ import androidx.core.app.NotificationCompat;
 
 import com.example.billiardassist.App;
 import com.example.billiardassist.R;
+import com.example.billiardassist.ai.AimAssistManager;
+import com.example.billiardassist.utils.DrawUtils;
+
+import java.util.List;
 
 /**
  * 悬浮窗服务 - 负责在屏幕上绘制辅助线
@@ -40,10 +44,10 @@ public class FloatingService extends Service {
     private Paint paintGreen, paintRed, paintYellow;
     private int screenWidth, screenHeight;
 
+    // 配置
     private int lineColor = Color.GREEN;
     private float lineThickness = 5.0f;
     private boolean showAntLine = false;
-    private boolean isDrawing = false;
 
     @Override
     public void onCreate() {
@@ -56,12 +60,12 @@ public class FloatingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && "STOP".equals(intent.getAction())) {
-            stopDrawing();
             stopSelf();
             return START_NOT_STICKY;
         }
 
         startForeground(NOTIFICATION_ID, buildNotification());
+
         initOverlayWindow();
         startDrawingLoop();
 
@@ -106,6 +110,7 @@ public class FloatingService extends Service {
         if (windowManager == null) return;
 
         DisplayMetrics metrics = new DisplayMetrics();
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 screenWidth = windowManager.getCurrentWindowMetrics().getBounds().width();
@@ -154,26 +159,17 @@ public class FloatingService extends Service {
     }
 
     private void startDrawingLoop() {
-        if (isDrawing) return;
-        isDrawing = true;
-
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (!isDrawing) return;
                 drawGuideLines(screenWidth / 2, screenHeight / 2);
                 mainHandler.postDelayed(this, 16);
             }
         });
     }
 
-    private void stopDrawing() {
-        isDrawing = false;
-        mainHandler.removeCallbacksAndMessages(null);
-    }
-
     /**
-     * 绘制辅助线 - 完整版
+     * 绘制辅助线 - 完整版（含AI辅助）
      */
     public void drawGuideLines(int cx, int cy) {
         if (overlayView == null || cx < 0 || cy < 0 || screenWidth <= 0 || screenHeight <= 0) return;
@@ -187,8 +183,7 @@ public class FloatingService extends Service {
                     oldBitmap.recycle();
                 }
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         Bitmap bitmap;
         try {
@@ -201,53 +196,75 @@ public class FloatingService extends Service {
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        // ✅ 绘制十字准星
+        // ===== 基础辅助线（十字准星 + 瞄准圈） =====
         canvas.drawLine(0, cy, screenWidth, cy, paintGreen);
         canvas.drawLine(cx, 0, cx, screenHeight, paintGreen);
-
-        // ✅ 绘制瞄准圈
-        paintRed.setStyle(Paint.Style.STROKE);
         canvas.drawCircle(cx, cy, 60, paintRed);
 
-        // ✅ 绘制中心点
+        // ===== AI辅助绘制 =====
+        AimAssistManager aimManager = AimAssistManager.getInstance();
+
+        // 1. 获取AI推荐瞄准点
+        android.graphics.Point aimPoint = aimManager.getRecommendedAimPoint();
+        if (aimPoint != null) {
+            Paint aimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            aimPaint.setColor(Color.rgb(0, 255, 255));
+            aimPaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(aimPoint.x, aimPoint.y, 8, aimPaint);
+            DrawUtils.drawAimLine(canvas, new android.graphics.Point(cx, cy), aimPoint);
+        }
+
+        // 2. 绘制走位预测
+        List<android.graphics.Point> path = aimManager.getPredictedPath();
+        if (path != null && !path.isEmpty()) {
+            DrawUtils.drawPath(canvas, path);
+        }
+
+        // 3. 绘制力度条（右下角）
+        int power = aimManager.calculatePower();
+        DrawUtils.drawPowerBar(canvas, screenWidth - 250, screenHeight - 60, power, 150);
+
+        // 4. 绘制角度指示器
+        double angle = aimManager.calculateBestAngle();
+        DrawUtils.drawAngleIndicator(canvas, new android.graphics.Point(cx, cy), angle, 80);
+
+        // 5. 显示辅助信息（左上角）
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(20);
+        textPaint.setAlpha(180);
+        String info = "角度: " + String.format("%.1f", angle) + "° | 力度: " + power + "%";
+        canvas.drawText(info, 20, 60, textPaint);
+
+        // 6. 显示是否可进球
+        Paint shotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shotPaint.setTextSize(24);
+        shotPaint.setAlpha(200);
+        if (aimManager.hasClearShot()) {
+            shotPaint.setColor(Color.rgb(0, 255, 0));
+            canvas.drawText("✅ 可进球!", 20, 100, shotPaint);
+        } else {
+            shotPaint.setColor(Color.rgb(255, 100, 0));
+            canvas.drawText("⚠️ 调整角度", 20, 100, shotPaint);
+        }
+
+        // 7. 绘制准星
+        DrawUtils.drawCrosshair(canvas, new android.graphics.Point(cx, cy), 100);
+
+        // 8. 中心红点
         paintRed.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(cx, cy, 8, paintRed);
-
-        // ✅ 绘制角度刻度
-        for (int i = 0; i < 360; i += 30) {
-            double rad = Math.toRadians(i);
-            float startX = (float) (cx + Math.cos(rad) * 70);
-            float startY = (float) (cy + Math.sin(rad) * 70);
-            float endX = (float) (cx + Math.cos(rad) * 85);
-            float endY = (float) (cy + Math.sin(rad) * 85);
-            canvas.drawLine(startX, startY, endX, endY, paintYellow);
-        }
-
-        // ✅ 绘制蚂蚁线（如果开启）
-        if (showAntLine) {
-            paintYellow.setStyle(Paint.Style.STROKE);
-            paintYellow.setStrokeWidth(2);
-            float radius = 60;
-            for (int i = 0; i < 360; i += 10) {
-                double rad = Math.toRadians(i);
-                float dotX = (float) (cx + Math.cos(rad) * radius);
-                float dotY = (float) (cy + Math.sin(rad) * radius);
-                canvas.drawCircle(dotX, dotY, 3, paintYellow);
-            }
-        }
+        canvas.drawCircle(cx, cy, 10, paintRed);
 
         overlayView.setImageBitmap(bitmap);
     }
 
     @Override
     public void onDestroy() {
-        stopDrawing();
         try {
             if (floatingView != null && floatingView.getParent() != null) {
                 windowManager.removeView(floatingView);
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         super.onDestroy();
     }
 
