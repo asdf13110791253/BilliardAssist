@@ -34,7 +34,7 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ 新增：设置页面 -->
+        <!-- 设置页面 -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
