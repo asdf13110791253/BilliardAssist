@@ -22,7 +22,6 @@ public class App extends Application {
     private static App instance;
     private boolean isOpenCVInitSuccess = false;
 
-    // ==================== 录屏数据存储 ====================
     private int mediaProjectionResultCode;
     private Intent mediaProjectionData;
 
@@ -31,7 +30,6 @@ public class App extends Application {
         super.onCreate();
         instance = this;
 
-        // 崩溃捕获
         CrashHandler.getInstance().init(this);
 
         initDefaultSettings();
@@ -56,6 +54,31 @@ public class App extends Application {
         return mediaProjectionData;
     }
 
+    // ==================== 背景音乐控制 ====================
+    public boolean isMusicEnabled() {
+        return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                .getBoolean("music_enabled", true);
+    }
+
+    public void setMusicEnabled(boolean enabled) {
+        getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                .edit()
+                .putBoolean("music_enabled", enabled)
+                .apply();
+    }
+
+    public float getMusicVolume() {
+        return getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                .getFloat("music_volume", 0.5f);
+    }
+
+    public void setMusicVolume(float volume) {
+        getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
+                .edit()
+                .putFloat("music_volume", Math.max(0, Math.min(1, volume)))
+                .apply();
+    }
+
     // ==================== 初始化默认配置 ====================
     private void initDefaultSettings() {
         SharedPreferences settingsPrefs = getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE);
@@ -69,6 +92,8 @@ public class App extends Application {
                     .putBoolean("adsorb", true)
                     .putInt("reflect_mode", 0)
                     .putInt("table_cloth", 1)
+                    .putBoolean("music_enabled", true)
+                    .putFloat("music_volume", 0.5f)
                     .apply();
         }
 
