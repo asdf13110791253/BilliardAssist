@@ -1,4 +1,5 @@
 name: LingMiao V2 Build
+
 on:
   push:
     branches: [main, master]
@@ -7,6 +8,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # 权限配置 - 允许创建Release
+    permissions:
+      contents: write
+      actions: read
+    
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
@@ -23,18 +30,14 @@ jobs:
           api-level: 34
           ndk: "26.1.10909125"
 
-      - name: 修复Gradle包装器（国内镜像加速+兜底）
+      - name: 修复Gradle包装器（国内镜像加速）
         run: |
           rm -rf gradle/wrapper gradlew
           mkdir -p gradle/wrapper
           
-          # 尝试从Gitee下载，失败则切换备用源
-          curl -L --connect-timeout 10 --retry 3 -o gradle/wrapper/gradle-wrapper.jar \
-            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar || \
-          curl -L --connect-timeout 10 --retry 3 -o gradle/wrapper/gradle-wrapper.jar \
-            https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+          curl -L -o gradle/wrapper/gradle-wrapper.jar \
+            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar
           
-          # 强制使用腾讯云镜像（确保国内速度）
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
@@ -51,44 +54,92 @@ jobs:
           chmod +x gradlew
           ls -lh gradle/wrapper/gradle-wrapper.jar
 
-      - name: 下载OpenCV so库（多镜像兜底）
+      - name: 下载OpenCV so库
         run: |
-          mkdir -p native_libs app/src/main/jniLibs/arm64-v8a
-          
-          # 方案1：ghproxy加速（首选）
-          wget --no-check-certificate --timeout=30 --tries=3 \
-            https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
-            -O opencv.zip || \
-          # 方案2：ghproxy主站（备选）
-          wget --no-check-certificate --timeout=30 --tries=3 \
-            https://ghproxy.com/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
-            -O opencv.zip
-          
-          # 校验文件完整性（必须大于50MB）
-          filesize=$(stat -c%s opencv.zip 2>/dev/null || echo 0)
-          if [ $filesize -lt 50000000 ]; then
-              echo "❌ OpenCV下载失败或文件损坏（大小：$filesize）"
+          mkdir native_libs
+          wget --no-check-certificate https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip -O opencv.zip
+          filesize=$(stat -c%s opencv.zip)
+          if [ $filesize -lt 1000000 ]; then
+              echo "❌ 下载文件异常，不是完整压缩包"
               exit 1
           fi
-          
+          echo "✅ OpenCV下载成功，大小: $filesize 字节"
           unzip -q opencv.zip -d native_libs
+          mkdir -p app/src/main/jniLibs/arm64-v8a
           cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
-          echo "✅ OpenCV so库部署完成"
-
-      - name: 赋予Gradle执行权限
-        run: chmod +x ./gradlew
-
-      - name: 清理构建缓存
-        run: ./gradlew clean
+          echo "✅ OpenCV so库复制完成"
 
       - name: 打包Release APK
-        run: ./gradlew assembleRelease --stacktrace --info
+        run: ./gradlew assembleRelease --stacktrace
         env:
-          GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8 -Dorg.gradle.daemon=false"
+          GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      - name: 上传APK产物（强制兜底）
+      - name: 检查APK文件
+        run: |
+          if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
+            filesize=$(stat -c%s "app/build/outputs/apk/release/app-release.apk")
+            echo "✅ APK生成成功！大小: $((filesize/1024/1024)) MB"
+            ls -lh app/build/outputs/apk/release/
+          else
+            echo "❌ APK文件不存在！"
+            find app/build -name "*.apk" 2>/dev/null || echo "未找到任何APK"
+            exit 1
+          fi
+
+      # ✅ 上传APK到Artifacts（保留）
+      - name: 上传APK产物
         uses: actions/upload-artifact@v4
         with:
           name: LingMiao-V2-APK
           path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error  # 文件不存在时直接报错，避免空包
+          if-no-files-found: error
+          retention-days: 30
+
+      # ✅ 自动创建Release并上传APK
+      - name: 创建Release并上传APK
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "灵喵 V2 - ${{ github.run_number }}"
+          tag_name: "v2.0.${{ github.run_number }}"
+          body: |
+            ## 🎱 灵喵 V2 自动构建
+            
+            ### 📦 版本信息
+            - 构建编号: #${{ github.run_number }}
+            - 构建时间: ${{ github.event.repository.updated_at }}
+            - 分支: ${{ github.ref_name }}
+            
+            ### ✨ 功能说明
+            - AI 智能瞄准辅助
+            - 精准桌台计费
+            - 经营数据报表
+            - 支持横版/竖版模式
+            
+            ### 📱 安装说明
+            1. 下载 APK 文件到手机
+            2. 允许"安装未知来源应用"
+            3. 首次运行需授予悬浮窗权限
+            
+            ### ⚠️ 注意事项
+            本版本为自动构建版，如有问题请提Issue。
+          files: |
+            app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ✅ 显示下载链接
+      - name: 显示下载链接
+        run: |
+          echo "=========================================="
+          echo "✅ 构建成功！"
+          echo ""
+          echo "📥 下载方式1 - Artifacts:"
+          echo "   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "📥 下载方式2 - Releases:"
+          echo "   https://github.com/${{ github.repository }}/releases"
+          echo "=========================================="
