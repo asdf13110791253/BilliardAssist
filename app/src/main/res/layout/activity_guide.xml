@@ -1,209 +1,304 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF0D3311"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="@drawable/bg_gradient">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="100dp">
 
-        <!-- 顶部品牌标识 -->
+        <!-- ===== 顶部 ===== -->
         <LinearLayout
             android:id="@+id/layout_header"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="32dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:src="@mipmap/ic_launcher"
-                android:layout_marginRight="12dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="灵喵"
+                    android:textColor="#FFFFFF"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AI 智能台球辅助"
+                    android:textColor="#80FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
 
             <TextView
+                android:id="@+id/tv_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textColor="#FFFFFFFF"
-                android:textSize="26sp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="6dp"
+                android:text="未激活"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"/>
+                android:background="@drawable/bg_status_pill" />
         </LinearLayout>
 
-        <!-- 状态显示 -->
-        <TextView
-            android:id="@+id/tv_status"
-            android:layout_width="wrap_content"
+        <!-- ===== 状态卡片 ===== -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_status"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/layout_header"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:text="@string/status_inactive"
-            android:textColor="#FFFFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"/>
-
-        <!-- 模式选择按钮 -->
-        <LinearLayout
-            android:id="@+id/layout_modes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/tv_status"
-            android:layout_marginTop="20dp"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btn_vertical"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="@string/btn_vertical"
-                android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:enabled="false"
-                android:alpha="0.5"/>
-
-            <Button
-                android:id="@+id/btn_horizontal"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="@string/btn_horizontal"
-                android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:enabled="false"
-                android:alpha="0.5"/>
-        </LinearLayout>
-
-        <!-- 系统设置按钮 -->
-        <LinearLayout
-            android:id="@+id/layout_settings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_modes"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btn_battery"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="@string/btn_battery"
-                android:textColor="#FFFFFFFF"
-                android:textSize="14sp"
-                android:background="#33444444"/>
-
-            <Button
-                android:id="@+id/btn_app_settings"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="@string/btn_app_settings"
-                android:textColor="#FFFFFFFF"
-                android:textSize="14sp"
-                android:background="#33444444"/>
-        </LinearLayout>
-
-        <!-- 使用说明 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
             android:layout_marginTop="24dp"
-            android:text="@string/usage_title"
-            android:textColor="#FFD4A017"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            app:cardBackgroundColor="#30FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="20dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="悬浮窗权限"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tv_permission_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:text="未授权"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:background="@drawable/bg_status_pill_red" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ===== 模式选择卡片 ===== -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_modes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/card_status"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#30FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择模式"
+                    android:textColor="#80FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <Button
+                        android:id="@+id/btn_vertical"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="竖版"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/btn_glass"
+                        android:enabled="false"
+                        android:alpha="0.5" />
+
+                    <Button
+                        android:id="@+id/btn_horizontal"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="横版"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/btn_glass"
+                        android:enabled="false"
+                        android:alpha="0.5" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ===== 系统设置卡片 ===== -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_system"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/card_modes"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#30FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="系统设置"
+                    android:textColor="#80FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <Button
+                        android:id="@+id/btn_battery"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="🔋 电池优化"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:background="@drawable/btn_glass_small" />
+
+                    <Button
+                        android:id="@+id/btn_app_settings"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="⚙️ 应用设置"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:background="@drawable/btn_glass_small" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:text="📐 高级设置"
+                    android:textColor="#FFD4A017"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/btn_glass_gold" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ===== 使用说明卡片 ===== -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_usage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/card_system"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#20FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📖 使用说明"
+                    android:textColor="#FFD4A017"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1. 授权悬浮窗权限"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="2. 选择游戏应用"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="3. 自动识别瞄准"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="4. 享受AI辅助"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ===== 底部版本信息 ===== -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="48dp"
-            android:text="@string/usage_1"
-            android:textColor="#FFCCCCCC"
-            android:textSize="14sp"
-            android:lineSpacingExtra="4dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="72dp"
-            android:text="@string/usage_2"
-            android:textColor="#FFCCCCCC"
-            android:textSize="14sp"
-            android:lineSpacingExtra="4dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="96dp"
-            android:text="@string/usage_3"
-            android:textColor="#FFCCCCCC"
-            android:textSize="14sp"
-            android:lineSpacingExtra="4dp"/>
-
-        <!-- 系统设置说明 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="128dp"
-            android:text="@string/system_settings"
-            android:textColor="#FFD4A017"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="152dp"
-            android:text="@string/system_settings_desc"
-            android:textColor="#FFAAAAAA"
-            android:textSize="13sp"
-            android:lineSpacingExtra="4dp"/>
-
-        <!-- ✅ 新增：设置按钮 -->
-        <Button
-            android:id="@+id/btn_settings"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="200dp"
-            android:background="#44555555"
-            android:text="⚙️ 设置"
-            android:textColor="#FFFFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"/>
-
-        <!-- 底部占位 -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_below="@id/layout_settings"
-            android:layout_marginTop="260dp"/>
+            android:layout_below="@id/card_usage"
+            android:layout_marginTop="24dp"
+            android:text="版本 1.0 · 灵喵 AI"
+            android:textColor="#40FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center" />
 
     </RelativeLayout>
 </ScrollView>
