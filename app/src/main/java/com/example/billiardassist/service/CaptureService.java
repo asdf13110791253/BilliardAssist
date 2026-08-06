@@ -2,13 +2,14 @@ package com.example.billiardassist.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.ImageFormat;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -29,7 +30,6 @@ public class CaptureService extends Service {
     private Handler handler = new Handler();
     private boolean isRunning = false;
 
-    // 屏幕尺寸
     private int screenWidth = 1080;
     private int screenHeight = 1920;
 
@@ -49,30 +49,26 @@ public class CaptureService extends Service {
         if (isRunning) return;
 
         try {
-            MediaProjectionManager projectionManager = 
+            MediaProjectionManager projectionManager =
                 (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-            
+
             int resultCode = App.getInstance().getMediaProjectionResultCode();
             Intent data = App.getInstance().getMediaProjectionData();
-            
+
             if (data == null) {
                 Log.e(TAG, "录屏数据为空");
                 return;
             }
 
             mediaProjection = projectionManager.getMediaProjection(resultCode, data);
-            
-            // 获取屏幕尺寸
+
             screenWidth = getResources().getDisplayMetrics().widthPixels;
             screenHeight = getResources().getDisplayMetrics().heightPixels;
-            
+
             int density = getResources().getDisplayMetrics().densityDpi;
 
-            // ✅ 修复：创建ImageReader用于截图
-            imageReader = ImageReader.newInstance(screenWidth, screenHeight, 
-                android.graphics.ImageFormat.RGB_565, 2);
+            imageReader = ImageReader.newInstance(screenWidth, screenHeight, ImageFormat.RGB_565, 2);
 
-            // ✅ 修复：添加最后一个null参数
             virtualDisplay = mediaProjection.createVirtualDisplay(
                 "ScreenCapture",
                 screenWidth,
@@ -81,15 +77,14 @@ public class CaptureService extends Service {
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 imageReader.getSurface(),
                 null,
-                null  // ← 添加这个参数，解决编译错误
+                null
             );
-            
+
             isRunning = true;
             Log.d(TAG, "✅ 录屏服务启动成功，尺寸: " + screenWidth + "x" + screenHeight);
-            
-            // 开始循环截屏
+
             startScreenCaptureLoop();
-            
+
         } catch (Exception e) {
             Log.e(TAG, "启动录屏失败", e);
         }
@@ -101,7 +96,7 @@ public class CaptureService extends Service {
             public void run() {
                 if (isRunning) {
                     captureScreen();
-                    handler.postDelayed(this, 50); // 20fps
+                    handler.postDelayed(this, 50);
                 }
             }
         });
@@ -110,18 +105,14 @@ public class CaptureService extends Service {
     private void captureScreen() {
         try {
             if (imageReader == null) return;
-            
-            // 获取最新的一帧图像
+
             Image image = imageReader.acquireLatestImage();
             if (image == null) return;
 
             try {
-                // 将Image转换为Bitmap
-                android.graphics.Bitmap bitmap = imageToBitmap(image);
+                Bitmap bitmap = imageToBitmap(image);
                 if (bitmap != null) {
-                    // 发送给AI分析
                     AimAssistManager.getInstance().analyzeFrame(bitmap);
-                    // 回收Bitmap
                     bitmap.recycle();
                 }
             } finally {
@@ -132,10 +123,7 @@ public class CaptureService extends Service {
         }
     }
 
-    /**
-     * 将Image转换为Bitmap
-     */
-    private android.graphics.Bitmap imageToBitmap(Image image) {
+    private Bitmap imageToBitmap(Image image) {
         try {
             Image.Plane[] planes = image.getPlanes();
             if (planes.length == 0) return null;
@@ -145,18 +133,16 @@ public class CaptureService extends Service {
             int rowStride = planes[0].getRowStride();
             int rowPadding = rowStride - pixelStride * screenWidth;
 
-            // 创建Bitmap
-            android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+            Bitmap bitmap = Bitmap.createBitmap(
                 screenWidth + rowPadding / pixelStride,
                 screenHeight,
-                android.graphics.Bitmap.Config.ARGB_8888
+                Bitmap.Config.ARGB_8888
             );
 
             bitmap.copyPixelsFromBuffer(buffer);
-            
-            // 裁剪掉填充部分
+
             if (rowPadding > 0) {
-                return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, screenWidth, screenHeight);
+                return Bitmap.createBitmap(bitmap, 0, 0, screenWidth, screenHeight);
             }
             return bitmap;
         } catch (Exception e) {
@@ -168,7 +154,7 @@ public class CaptureService extends Service {
     private void stopCapture() {
         isRunning = false;
         handler.removeCallbacksAndMessages(null);
-        
+
         if (imageReader != null) {
             imageReader.close();
             imageReader = null;
