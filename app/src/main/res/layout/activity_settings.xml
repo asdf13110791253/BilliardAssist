@@ -2,405 +2,265 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F0">
+    android:background="#FF0D3311"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <!-- 标题栏 -->
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚙️ 设置"
+            android:textColor="#FFFFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 当前桌布 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="当前桌布："
+            android:textColor="#FFD4A017"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rg_table_cloth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rb_cloth_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="桌布1"
+                android:textColor="#FFFFFFFF"
+                android:buttonTint="#FFD4A017" />
+
+            <RadioButton
+                android:id="@+id/rb_cloth_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="桌布2"
+                android:textColor="#FFFFFFFF"
+                android:buttonTint="#FFD4A017" />
+
+            <RadioButton
+                android:id="@+id/rb_cloth_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="桌布3"
+                android:textColor="#FFFFFFFF"
+                android:buttonTint="#FFD4A017" />
+        </RadioGroup>
+
+        <!-- 当前反射方案 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="当前反射方案："
+            android:textColor="#FFD4A017"
+            android:textSize="16sp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rg_reflect_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rb_compensation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="反射补偿"
+                android:textColor="#FFFFFFFF"
+                android:buttonTint="#FFD4A017"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/rb_mirror"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="镜像反射"
+                android:textColor="#FFFFFFFF"
+                android:buttonTint="#FFD4A017" />
+        </RadioGroup>
+
+        <!-- 补偿比例 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="补偿比例"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp">
+            android:gravity="center_vertical">
+
+            <SeekBar
+                android:id="@+id/seek_comp_ratio"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="18"
+                android:progressTint="#FFD4A017" />
+
+            <TextView
+                android:id="@+id/tv_comp_ratio"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="0.18"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- 手动翻袋库数 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="手动翻袋库数"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <SeekBar
+                android:id="@+id/seek_bank_count"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="5"
+                android:progress="2"
+                android:progressTint="#FFD4A017" />
+
+            <TextView
+                android:id="@+id/tv_bank_count"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="2"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- 辅助线粗细 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="辅助线粗细"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <SeekBar
+                android:id="@+id/seek_line_thickness"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="20"
+                android:progress="5"
+                android:progressTint="#FFD4A017" />
+
+            <TextView
+                android:id="@+id/tv_line_thickness"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="5.0"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- 开关 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="⚙ 设置"
-                android:textColor="#1A237E"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:text="显示蚂蚁线"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp" />
 
-            <Button
-                android:id="@+id/btn_close_settings"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:text="✕"
-                android:textSize="18sp"
-                android:textColor="#666666" />
+            <Switch
+                android:id="@+id/sw_ant_line"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:thumbTint="#FFD4A017"
+                android:trackTint="#666666" />
         </LinearLayout>
 
-        <!-- 桌布选择 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
+            android:orientation="horizontal"
             android:layout_marginTop="12dp">
 
             <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="吸附最近球"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/sw_adsorb"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="当前桌布："
-                android:textColor="#333333"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RadioGroup
-                android:id="@+id/rg_table_cloth"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-
-                <RadioButton
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="桌布1"
-                    android:buttonTint="#5D4037" />
-
-                <RadioButton
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="桌布2"
-                    android:checked="true"
-                    android:buttonTint="#5D4037" />
-
-                <RadioButton
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="桌布3"
-                    android:buttonTint="#5D4037" />
-            </RadioGroup>
+                android:thumbTint="#FFD4A017"
+                android:trackTint="#666666"
+                android:checked="true" />
         </LinearLayout>
 
-        <!-- 反射方案 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="当前反射方案："
-                android:textColor="#333333"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RadioGroup
-                android:id="@+id/rg_reflect"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-
-                <RadioButton
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="反射补偿"
-                    android:checked="true"
-                    android:buttonTint="#5D4037" />
-
-                <RadioButton
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="镜像反射"
-                    android:buttonTint="#5D4037" />
-            </RadioGroup>
-        </LinearLayout>
-
-        <!-- 补偿比例 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="补偿比例"
-                    android:textColor="#333333"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_comp_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0.18"
-                    android:textColor="#5D4037"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seek_comp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:max="50"
-                android:progress="18"
-                android:thumbTint="#5D4037"
-                android:progressTint="#5D4037" />
-        </LinearLayout>
-
-        <!-- 颜色选择 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="辅助线颜色"
-                android:textColor="#333333"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:columnCount="5"
-                android:layout_marginTop="10dp"
-                android:rowCount="2">
-
-                <Button android:id="@+id/btn_color_0" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#000000" />
-                <Button android:id="@+id/btn_color_1" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#FFFFFF" />
-                <Button android:id="@+id/btn_color_2" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#888888" />
-                <Button android:id="@+id/btn_color_3" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#FF0000" />
-                <Button android:id="@+id/btn_color_4" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#00FF00" />
-                <Button android:id="@+id/btn_color_5" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#0000FF" />
-                <Button android:id="@+id/btn_color_6" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#FFFF00" />
-                <Button android:id="@+id/btn_color_7" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#00FFFF" />
-                <Button android:id="@+id/btn_color_8" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#FF00FF" />
-                <Button android:id="@+id/btn_color_9" android:layout_width="48dp" android:layout_height="48dp" android:layout_margin="4dp" android:background="#FF8C00" />
-            </GridLayout>
-        </LinearLayout>
-
-        <!-- 翻袋库数 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="手动翻袋库数"
-                    android:textColor="#333333"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btn_bank_minus"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="-"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/tv_bank_value"
-                    android:layout_width="50dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="2"
-                    android:textColor="#5D4037"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btn_bank_plus"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="+"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seek_bank"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:max="5"
-                android:progress="2"
-                android:thumbTint="#5D4037"
-                android:progressTint="#5D4037" />
-        </LinearLayout>
-
-        <!-- 辅助线粗细 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="辅助线粗细"
-                    android:textColor="#333333"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btn_thickness_minus"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="-"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/tv_thickness_value"
-                    android:layout_width="60dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="5.0"
-                    android:textColor="#5D4037"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/btn_thickness_plus"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="+"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seek_thickness"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:max="40"
-                android:progress="10"
-                android:thumbTint="#5D4037"
-                android:progressTint="#5D4037" />
-        </LinearLayout>
-
-        <!-- 两个开关 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card_white"
-            android:padding="16dp"
-            android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="显示蚂蚁线"
-                    android:textColor="#333333"
-                    android:textSize="15sp" />
-
-                <Switch
-                    android:id="@+id/switch_ant_line"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="false"
-                    android:thumbTint="#5D4037"
-                    android:trackTint="#CCCCCC" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#EEEEEE"
-                android:layout_marginVertical="12dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="吸附最近球"
-                    android:textColor="#333333"
-                    android:textSize="15sp" />
-
-                <Switch
-                    android:id="@+id/switch_adsorb"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:thumbTint="#5D4037"
-                    android:trackTint="#CCCCCC" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- 退出应用按钮 -->
+        <!-- 退出按钮 -->
         <Button
             android:id="@+id/btn_exit_app"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="#D32F2F"
+            android:layout_height="52dp"
+            android:layout_marginTop="30dp"
+            android:layout_marginBottom="20dp"
+            android:background="#CC3333"
             android:text="退出应用"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
     </LinearLayout>
