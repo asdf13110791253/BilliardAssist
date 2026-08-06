@@ -67,42 +67,64 @@ jobs:
           mkdir -p app/src/main/jniLibs/arm64-v8a
           cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
 
-      - name: 打包Release APK（未签名）
+      - name: 打包Release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
           GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
 
-      # ✅ 检查并上传未签名APK
-      - name: 检查并上传APK
+      # ✅ 智能查找并上传APK
+      - name: 查找并上传APK
+        id: upload_apk
         run: |
-          echo "🔍 查找所有APK文件..."
-          find app/build -name "*.apk" -type f
-          echo ""
+          echo "🔍 正在查找APK文件..."
           
-          # 查找未签名APK
-          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          # 查找所有APK
+          APK_FILES=$(find app/build -name "*.apk" -type f)
           
-          if [ -f "$UNSIGNED_APK" ]; then
-            filesize=$(stat -c%s "$UNSIGNED_APK")
-            echo "✅ 未签名APK生成成功！"
-            echo "✅ 路径: $UNSIGNED_APK"
-            echo "✅ 大小: $((filesize/1024/1024)) MB"
-            ls -lh "$UNSIGNED_APK"
-          else
-            echo "❌ 未找到APK文件！"
+          if [ -z "$APK_FILES" ]; then
+            echo "❌ 未找到任何APK文件！"
+            echo "检查目录结构："
+            ls -la app/build/outputs/apk/ 2>/dev/null || echo "目录不存在"
             exit 1
           fi
+          
+          echo "✅ 找到APK文件："
+          echo "$APK_FILES"
+          echo ""
+          
+          # 显示每个APK的信息
+          for apk in $APK_FILES; do
+            filesize=$(stat -c%s "$apk")
+            echo "📦 $(basename $apk) - $((filesize/1024)) KB"
+          done
+          
+          # 获取第一个APK的目录
+          FIRST_APK=$(echo "$APK_FILES" | head -1)
+          APK_DIR=$(dirname "$FIRST_APK")
+          echo "APK_DIR=$APK_DIR" >> $GITHUB_ENV
 
-      # ✅ 上传未签名APK
+      # ✅ 上传整个release目录（保证能找到）
       - name: 上传APK产物
         uses: actions/upload-artifact@v4
         with:
-          name: LingMiao-V2-APK-未签名
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
-          if-no-files-found: error
+          name: LingMiao-V2-APK
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/*/*.apk
+          if-no-files-found: warn
           retention-days: 30
 
-      # ✅ 创建Release（标注未签名）
+      # ✅ 备用：直接上传整个目录
+      - name: 备用上传（整个目录）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-目录
+          path: app/build/outputs/apk/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # ✅ 创建Release
       - name: 创建Release并上传APK
         uses: softprops/action-gh-release@v2
         with:
@@ -113,31 +135,34 @@ jobs:
             
             ### 📦 版本信息
             - 构建编号: #${{ github.run_number }}
-            - 分支: ${{ github.ref_name }}
+            - 构建时间: ${{ github.event.repository.updated_at }}
             
             ### ⚠️ 重要提示
-            **此APK为未签名版本！**
-            使用前请用MT管理器签名后再安装。
+            APK可能是未签名版本，如无法安装请用MT管理器签名。
             
             ### 📱 安装步骤
             1. 下载 APK
-            2. 用MT管理器签名
+            2. 如提示未签名，用MT管理器签名
             3. 安装到手机
             4. 授予悬浮窗权限
           files: |
-            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/apk/release/*.apk
           draft: false
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: 显示下载链接
         run: |
           echo "=========================================="
           echo "✅ 构建成功！"
           echo ""
-          echo "📥 下载地址:"
+          echo "📥 下载方式1 - Artifacts（推荐）:"
+          echo "   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "📥 下载方式2 - Releases:"
           echo "   https://github.com/${{ github.repository }}/releases"
           echo ""
-          echo "⚠️ 下载后请用MT管理器签名再安装"
+          echo "📂 在页面底部找到 Artifacts 区域下载APK"
           echo "=========================================="
