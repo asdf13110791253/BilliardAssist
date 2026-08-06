@@ -23,16 +23,18 @@ jobs:
           api-level: 34
           ndk: "26.1.10909125"
 
-      - name: 修复Gradle包装器（国内镜像加速）
+      - name: 修复Gradle包装器（国内镜像加速+兜底）
         run: |
           rm -rf gradle/wrapper gradlew
           mkdir -p gradle/wrapper
           
-          # 从Gitee镜像下载（国内快）
-          curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+          # 尝试从Gitee下载，失败则切换备用源
+          curl -L --connect-timeout 10 --retry 3 -o gradle/wrapper/gradle-wrapper.jar \
+            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar || \
+          curl -L --connect-timeout 10 --retry 3 -o gradle/wrapper/gradle-wrapper.jar \
+            https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
           
-          # 使用腾讯云镜像下载Gradle
+          # 强制使用腾讯云镜像（确保国内速度）
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
@@ -49,26 +51,44 @@ jobs:
           chmod +x gradlew
           ls -lh gradle/wrapper/gradle-wrapper.jar
 
-      - name: 下载OpenCV so库
+      - name: 下载OpenCV so库（多镜像兜底）
         run: |
-          mkdir native_libs
-          wget --no-check-certificate https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip -O opencv.zip
-          filesize=$(stat -c%s opencv.zip)
-          if [ $filesize -lt 1000000 ]; then
-              echo "❌ 下载文件异常，不是完整压缩包"
+          mkdir -p native_libs app/src/main/jniLibs/arm64-v8a
+          
+          # 方案1：ghproxy加速（首选）
+          wget --no-check-certificate --timeout=30 --tries=3 \
+            https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
+            -O opencv.zip || \
+          # 方案2：ghproxy主站（备选）
+          wget --no-check-certificate --timeout=30 --tries=3 \
+            https://ghproxy.com/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
+            -O opencv.zip
+          
+          # 校验文件完整性（必须大于50MB）
+          filesize=$(stat -c%s opencv.zip 2>/dev/null || echo 0)
+          if [ $filesize -lt 50000000 ]; then
+              echo "❌ OpenCV下载失败或文件损坏（大小：$filesize）"
               exit 1
           fi
-          unzip opencv.zip -d native_libs
-          mkdir -p app/src/main/jniLibs/arm64-v8a
+          
+          unzip -q opencv.zip -d native_libs
           cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/
+          echo "✅ OpenCV so库部署完成"
+
+      - name: 赋予Gradle执行权限
+        run: chmod +x ./gradlew
+
+      - name: 清理构建缓存
+        run: ./gradlew clean
 
       - name: 打包Release APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease --stacktrace --info
         env:
-          GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+          GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8 -Dorg.gradle.daemon=false"
 
-      - name: 上传APK产物
+      - name: 上传APK产物（强制兜底）
         uses: actions/upload-artifact@v4
         with:
           name: LingMiao-V2-APK
           path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error  # 文件不存在时直接报错，避免空包
