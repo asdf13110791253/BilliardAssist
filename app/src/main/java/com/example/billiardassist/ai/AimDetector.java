@@ -21,9 +21,7 @@ public class AimDetector {
     private int minRadius = 8;
     private int maxRadius = 80;
 
-    public AimDetector(Bitmap templateBitmap) {
-        // 不需要模板
-    }
+    public AimDetector(Bitmap templateBitmap) {}
 
     public List<Ball> detectAllBalls(Bitmap screenBitmap) {
         List<Ball> balls = new ArrayList<>();
@@ -36,11 +34,13 @@ public class AimDetector {
             Mat hsv = new Mat();
             Imgproc.cvtColor(src, hsv, Imgproc.COLOR_RGB2HSV);
 
+            // 提取高亮度区域（白球）
             Mat brightMask = new Mat();
             Scalar lowerBright = new Scalar(0, 0, 180);
             Scalar upperBright = new Scalar(180, 100, 255);
             Core.inRange(hsv, lowerBright, upperBright, brightMask);
 
+            // 提取彩色区域（目标球）
             Mat colorMask = new Mat();
             Scalar lowerColor = new Scalar(0, 50, 50);
             Scalar upperColor = new Scalar(180, 255, 200);
@@ -65,10 +65,8 @@ public class AimDetector {
                     float cx = (float) circle[0];
                     float cy = (float) circle[1];
                     float radius = (float) circle[2];
-
                     int type = classifyBall(src, cx, cy, radius);
-                    Ball ball = new Ball((int) cx, (int) cy, (int) radius, type);
-                    balls.add(ball);
+                    balls.add(new Ball((int) cx, (int) cy, (int) radius, type));
                 }
             }
 
@@ -84,23 +82,15 @@ public class AimDetector {
         } catch (Exception e) {
             Log.e(TAG, "检测失败", e);
         }
-
         return balls;
     }
 
     private int classifyBall(Mat src, float cx, float cy, float radius) {
         try {
-            int centerX = (int) cx;
-            int centerY = (int) cy;
-            double avgBrightness = getAverageBrightness(src, centerX, centerY, (int) radius);
-
-            if (avgBrightness > 200) {
-                return Ball.TYPE_CUE;
-            } else if (avgBrightness > 100) {
-                return Ball.TYPE_TARGET;
-            } else {
-                return Ball.TYPE_POCKET;
-            }
+            double avgBrightness = getAverageBrightness(src, (int) cx, (int) cy, (int) radius);
+            if (avgBrightness > 200) return Ball.TYPE_CUE;
+            else if (avgBrightness > 100) return Ball.TYPE_TARGET;
+            else return Ball.TYPE_POCKET;
         } catch (Exception e) {
             return Ball.TYPE_UNKNOWN;
         }
@@ -109,44 +99,20 @@ public class AimDetector {
     private double getAverageBrightness(Mat src, int cx, int cy, int radius) {
         Mat gray = new Mat();
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGRA2GRAY);
-
         Mat mask = Mat.zeros(gray.size(), gray.type());
         Imgproc.circle(mask, new org.opencv.core.Point(cx, cy), radius, new Scalar(255), -1);
-
         Scalar mean = Core.mean(gray, mask);
         gray.release();
         mask.release();
-
         return mean.val[0];
     }
 
     public Point detectCueBall(Bitmap screenBitmap) {
         List<Ball> balls = detectAllBalls(screenBitmap);
         for (Ball ball : balls) {
-            if (ball.type == Ball.TYPE_CUE) {
-                return new Point(ball.x, ball.y);
-            }
+            if (ball.type == Ball.TYPE_CUE) return new Point(ball.x, ball.y);
         }
         return null;
-    }
-
-    public Point detectTargetBall(Bitmap screenBitmap, Point cueBall) {
-        List<Ball> balls = detectAllBalls(screenBitmap);
-        double minDist = Double.MAX_VALUE;
-        Point target = null;
-
-        for (Ball ball : balls) {
-            if (ball.type == Ball.TYPE_CUE) continue;
-            double dist = 0;
-            if (cueBall != null) {
-                dist = Math.sqrt(Math.pow(ball.x - cueBall.x, 2) + Math.pow(ball.y - cueBall.y, 2));
-            }
-            if (dist < minDist) {
-                minDist = dist;
-                target = new Point(ball.x, ball.y);
-            }
-        }
-        return target;
     }
 
     public void release() {}
@@ -156,20 +122,9 @@ public class AimDetector {
         public static final int TYPE_CUE = 1;
         public static final int TYPE_TARGET = 2;
         public static final int TYPE_POCKET = 3;
-
-        public int x, y, radius;
-        public int type;
-
+        public int x, y, radius, type;
         public Ball(int x, int y, int radius, int type) {
-            this.x = x;
-            this.y = y;
-            this.radius = radius;
-            this.type = type;
-        }
-
-        @Override
-        public String toString() {
-            return "Ball{x=" + x + ", y=" + y + ", radius=" + radius + ", type=" + type + '}';
+            this.x = x; this.y = y; this.radius = radius; this.type = type;
         }
     }
 }
