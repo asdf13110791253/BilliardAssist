@@ -1,67 +1,97 @@
-package com.example.billiardassist;
+package com.example.billiardassist.ai;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.util.Log;
+
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 瞄准检测器 - 使用OpenCV检测瞄准中心
+ */
 public class AimDetector {
-    // 匹配阈值，可根据识别灵敏度调整
-    private static final double MATCH_THRESHOLD = 0.75;
+
+    private static final String TAG = "AimDetector";
     private Mat templateMat;
 
-    // 初始化识别模板
     public AimDetector(Bitmap templateBitmap) {
-        if (templateBitmap == null || templateBitmap.isRecycled()) {
-            throw new IllegalArgumentException("模板Bitmap为空或已回收");
+        if (templateBitmap != null && !templateBitmap.isRecycled()) {
+            templateMat = new Mat();
+            Utils.bitmapToMat(templateBitmap, templateMat);
+            Imgproc.cvtColor(templateMat, templateMat, Imgproc.COLOR_BGRA2GRAY);
         }
-        templateMat = new Mat();
-        Utils.bitmapToMat(templateBitmap, templateMat);
-        Imgproc.cvtColor(templateMat, templateMat, Imgproc.COLOR_BGRA2GRAY);
     }
 
-    // 核心识别方法，返回瞄准中心点
-    public Point detectAimCenter(Bitmap screenBitmap) {
-        // 空值拦截
-        if (screenBitmap == null || screenBitmap.isRecycled() || templateMat == null || templateMat.empty()) {
+    /**
+     * 检测瞄准中心点
+     * 使用圆形检测找到屏幕中的目标球
+     */
+    public android.graphics.Point detectAimCenter(Bitmap screenBitmap) {
+        if (screenBitmap == null || screenBitmap.isRecycled()) {
             return null;
         }
 
-        Mat screenMat = new Mat();
-        Utils.bitmapToMat(screenBitmap, screenMat);
-        Imgproc.cvtColor(screenMat, screenMat, Imgproc.COLOR_BGRA2GRAY);
+        try {
+            Mat src = new Mat();
+            Utils.bitmapToMat(screenBitmap, src);
 
-        // 边界校验：截图尺寸必须大于模板
-        int resultCols = screenMat.cols() - templateMat.cols() + 1;
-        int resultRows = screenMat.rows() - templateMat.rows() + 1;
-        if (resultCols <= 0 || resultRows <= 0) {
-            screenMat.release();
-            return null;
+            // 转为灰度图
+            Mat gray = new Mat();
+            Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGRA2GRAY);
+
+            // 高斯模糊去噪
+            Mat blurred = new Mat();
+            Imgproc.GaussianBlur(gray, blurred, new Size(9, 9), 2, 2);
+
+            // 霍夫圆检测
+            Mat circles = new Mat();
+            Imgproc.HoughCircles(blurred, circles, Imgproc.HOUGH_GRADIENT, 1, 50, 100, 30, 10, 100);
+
+            // 释放中间变量
+            src.release();
+            gray.release();
+            blurred.release();
+
+            // 检查是否检测到圆
+            if (circles.cols() > 0) {
+                // 取第一个圆作为目标
+                double[] circle = circles.get(0, 0);
+                float cx = (float) circle[0];
+                float cy = (float) circle[1];
+                float radius = (float) circle[2];
+
+                Log.d(TAG, "检测到圆: center=(" + cx + ", " + cy + "), radius=" + radius);
+
+                // 如果模板匹配不为空，进一步验证
+                if (templateMat != null && !templateMat.empty()) {
+                    // TODO: 使用模板匹配验证
+                }
+
+                circles.release();
+                return new android.graphics.Point((int) cx, (int) cy);
+            }
+
+            circles.release();
+
+            // 如果没有检测到圆，返回屏幕中心
+            Log.d(TAG, "未检测到圆，返回屏幕中心");
+            return new android.graphics.Point(screenBitmap.getWidth() / 2, screenBitmap.getHeight() / 2);
+
+        } catch (Exception e) {
+            Log.e(TAG, "检测失败", e);
+            return new android.graphics.Point(screenBitmap.getWidth() / 2, screenBitmap.getHeight() / 2);
         }
-
-        Mat resultMat = new Mat(resultRows, resultCols, CvType.CV_32FC1);
-        Imgproc.matchTemplate(screenMat, templateMat, resultMat, Imgproc.TM_CCOEFF_NORMED);
-
-        Core.MinMaxLocResult mmr = Core.minMaxLoc(resultMat);
-        // 及时释放Mat，防止内存溢出
-        screenMat.release();
-        resultMat.release();
-
-        // 低于阈值判定无匹配目标
-        if (mmr.maxVal < MATCH_THRESHOLD) {
-            return null;
-        }
-
-        // 计算模板中心坐标
-        int centerX = (int) (mmr.maxLoc.x + templateMat.cols() / 2.0);
-        int centerY = (int) (mmr.maxLoc.y + templateMat.rows() / 2.0);
-        return new Point(centerX, centerY);
     }
 
-    // 释放模板内存，页面销毁时必须调用
     public void release() {
         if (templateMat != null) {
             templateMat.release();
