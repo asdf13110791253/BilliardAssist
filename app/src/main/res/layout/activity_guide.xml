@@ -36,7 +36,7 @@
                 android:letterSpacing="0.05"/>
         </LinearLayout>
 
-        <!-- ✅ 新增：状态显示 -->
+        <!-- ✅ 状态显示 - 修复 padding 格式 -->
         <TextView
             android:id="@+id/tv_status"
             android:layout_width="wrap_content"
@@ -44,13 +44,16 @@
             android:layout_below="@id/layout_header"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="20dp"
-            android:padding="8dp 24dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="@string/status_inactive"
             android:textColor="#FFFFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"/>
 
-        <!-- ✅ 新增：模式选择按钮 -->
+        <!-- ✅ 模式选择按钮 -->
         <LinearLayout
             android:id="@+id/layout_modes"
             android:layout_width="match_parent"
@@ -87,7 +90,7 @@
                 android:alpha="0.5"/>
         </LinearLayout>
 
-        <!-- ✅ 新增：系统设置按钮 -->
+        <!-- ✅ 系统设置按钮 -->
         <LinearLayout
             android:id="@+id/layout_settings"
             android:layout_width="match_parent"
