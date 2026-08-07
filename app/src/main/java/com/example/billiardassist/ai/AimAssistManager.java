@@ -45,12 +45,12 @@ public class AimAssistManager {
     // ==================== 球桌边界 ====================
     private RectF tableBounds = new RectF(30, 30, 1050, 2310);
 
-    // ==================== 物理常量 ====================
+    // ==================== 物理常量（已改为 float）====================
     private static final int BALL_RADIUS = 18;
     private static final int POCKET_RADIUS = 28;
     private static final int MAX_BOUNCE = 3;
-    private static final double FRICTION = 0.97;
-    private static final double CUSHION_ELASTICITY = 0.82;
+    private static final float FRICTION = 0.97f;          // 修改
+    private static final float CUSHION_ELASTICITY = 0.82f; // 修改
 
     // ==================== 单例 ====================
     private AimAssistManager() {
@@ -74,6 +74,10 @@ public class AimAssistManager {
 
         // 1. 检测所有球
         List<Ball> balls = aimDetector.detectAllBalls(screenBitmap);
+        if (balls == null || balls.isEmpty()) {
+            return; // 没有检测到球，直接返回
+        }
+
         resetData();
 
         // 2. 分类球
@@ -192,6 +196,8 @@ public class AimAssistManager {
 
     // ==================== 🏆 计算所有击球方案 ====================
     private void calculateAllShots() {
+        if (pockets.isEmpty()) return; // 防止空列表
+
         for (Point pocket : pockets) {
             // 1. 直接进球
             ShotSuggestion direct = analyzeDirectShot(pocket);
@@ -375,7 +381,7 @@ public class AimAssistManager {
         Point best = new Point(500, 500);
         double maxDist = 0;
 
-        int step = 30;
+        int step = 40; // 步长加大，减少计算量
         for (int x = (int) tableBounds.left + 40; x < tableBounds.right - 40; x += step) {
             for (int y = (int) tableBounds.top + 40; y < tableBounds.bottom - 40; y += step) {
                 Point p = new Point(x, y);
@@ -466,12 +472,12 @@ public class AimAssistManager {
             px += vx * 3;
             py += vy * 3;
 
-            vx *= FRICTION;
+            vx *= FRICTION;      // 现在 FRICTION 是 float
             vy *= FRICTION;
 
             // 库边反弹
             if (px < tableBounds.left || px > tableBounds.right) {
-                vx = -vx * CUSHION_ELASTICITY;
+                vx = -vx * CUSHION_ELASTICITY; // 现在 CUSHION_ELASTICITY 是 float
                 px = Math.max(tableBounds.left + 5, Math.min(tableBounds.right - 5, px));
             }
             if (py < tableBounds.top || py > tableBounds.bottom) {
@@ -479,7 +485,7 @@ public class AimAssistManager {
                 py = Math.max(tableBounds.top + 5, Math.min(tableBounds.bottom - 5, py));
             }
 
-            if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) break;
+            if (Math.abs(vx) < 0.1f && Math.abs(vy) < 0.1f) break;
 
             if (i % 2 == 0) {
                 predictedPath.add(new Point((int) px, (int) py));
