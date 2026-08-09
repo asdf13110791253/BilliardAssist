@@ -3,29 +3,28 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.lingmiao.v2">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.READ_CLIPBOARD" />
-    <uses-permission android:name="android.permission.WRITE_CLIPBOARD" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:targetApi="33" />
+    <!-- 台球辅助所需的全套系统权限 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 悬浮窗 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 前台服务 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" /> <!-- 录屏权限 -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- 网络 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- 保持唤醒 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- 电池优化白名单 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:targetApi="33" /> <!-- 通知权限 -->
 
     <application
         android:name=".App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+        android:theme="@style/AppTheme"
         android:supportsRtl="true"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
 
-        <!-- ✅【核心修改】将您刚新建的 MainActivity 设为 App 的主入口 -->
+        <!-- 1. 视频启动页 -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,69 +32,39 @@
             </intent-filter>
         </activity>
 
-        <!-- 旧的引导页，已取消启动属性 -->
+        <!-- 2. 免责声明页 -->
         <activity
-            android:name=".ui.GuideActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait" />
+            android:name=".DisclaimerActivity"
+            android:exported="false" />
 
-        <!-- 设置页面 -->
+        <!-- 3. 主悬浮窗控制页 -->
         <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:name=".MainActivity"
+            android:exported="false" />
 
+        <!-- 4. 录屏权限中转页面 (给台球视觉识别用) -->
         <activity
             android:name=".service.CapturePermissionActivity"
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
-            android:taskAffinity=""
             android:noHistory="true" />
 
-        <service
-            android:name=".service.CaptureService"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection"
-            android:stopWithTask="true" />
-
-        <!-- ✅【核心修改】将您刚新建的 OverlayService 注册进系统 -->
+        <!-- 5. 悬浮窗服务 -->
         <service
             android:name=".service.OverlayService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
 
+        <!-- 6. 录屏服务 (负责抓取游戏画面进行 C++ 图像识别) -->
         <service
-            android:name=".service.FloatingService"
+            android:name=".service.CaptureService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
 
-        <receiver
-            android:name=".receiver.BatteryReceiver"
-            android:exported="false"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BATTERY_LOW" />
-                <action android:name="android.intent.action.BATTERY_OKAY" />
-                <action android:name="android.intent.action.POWER_CONNECTED" />
-                <action android:name="android.intent.action.POWER_DISCONNECTED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name=".receiver.BootReceiver"
-            android:exported="false"
-            android:enabled="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
-
+        <!-- 7. 文件提供器 (用于保存和读取识别数据) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
