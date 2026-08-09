@@ -1,13 +1,8 @@
 <resources>
-    <!-- 顶级粉色主题定义，直接锁定 App 全局风格 -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- 状态栏和主色调 -->
         <item name="colorPrimary">@color/pink_primary</item>
         <item name="colorPrimaryDark">@color/pink_primary</item>
         <item name="colorAccent">@color/pink_primary</item>
-        <!-- App 全局背景色 -->
         <item name="android:windowBackground">@color/pink_primary_light</item>
-        <!-- 让顶部标题栏也变成纯粉色 -->
-        <item name="android:actionBarStyle">@style/Widget.AppCompat.ActionBar.Solid</item>
     </style>
 </resources>
