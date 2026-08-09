@@ -31,19 +31,11 @@
         <activity android:name=".ui.CalibrationActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         
-        <activity android:name=".service.CapturePermissionActivity" android:exported="false"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
-
-        <service android:name=".service.OverlayService" android:exported="false"
-            android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
-        <service android:name=".service.CaptureService" android:exported="false"
-            android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
-
-        <provider android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false" android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+        <activity android:name=".service.CapturePermissionActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
+        <service android:name=".service.OverlayService" android:exported="false" android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
+        <service android:name=".service.CaptureService" android:exported="false" android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
     </application>
 </manifest>
