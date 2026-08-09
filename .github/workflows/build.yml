@@ -1,178 +1,45 @@
-name: LingMiao V2 Build
+name: Build APK
 
-on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: write
-      actions: read
-    
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: 配置JDK17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
 
-      - name: 配置Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          ndk: "26.1.10909125"
+    # 1. 安装 Android SDK 和 NDK（这一步极狐有，GitHub也必须装，否则C++编译会挂）
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        log-accept-licenses: false # 自动接受许可证
 
-      # ✅ 修复：使用国内镜像下载Gradle
-      - name: 修复Gradle包装器（使用国内镜像）
-        run: |
-          rm -rf gradle/wrapper gradlew
-          mkdir -p gradle/wrapper
-          
-          # 从Gitee镜像下载gradle-wrapper.jar
-          curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            https://gitee.com/mirrors/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar
-          
-          # 使用多个国内镜像源（阿里云 + 腾讯云）
-          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://mirrors.aliyun.com/macports/distfiles/gradle/gradle-8.4-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-          
-          # 创建gradlew脚本
-          cat > gradlew << 'EOF'
-          #!/bin/sh
-          exec "$JAVA_HOME/bin/java" -classpath "$(dirname "$0")/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"
-          EOF
-          
-          chmod +x gradlew
-          
-          # 验证文件
-          ls -lh gradle/wrapper/
-          echo "✅ Gradle包装器修复完成"
+    - name: Install NDK and Tools
+      run: |
+        sdkmanager "platforms;android-34"
+        sdkmanager "build-tools;34.0.0"
+        sdkmanager "ndk;26.1.10909125"
 
-      - name: 下载OpenCV so库
-        run: |
-          mkdir native_libs
-          # 使用国内镜像下载OpenCV
-          wget --no-check-certificate -t 3 -T 30 \
-            https://ghfast.top/https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
-            -O opencv.zip || \
-          wget --no-check-certificate -t 3 -T 30 \
-            https://download.csdn.net/download/weixin_42129944/88411935 \
-            -O opencv.zip || \
-          wget --no-check-certificate -t 3 -T 30 \
-            https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip \
-            -O opencv.zip
-          
-          filesize=$(stat -c%s opencv.zip 2>/dev/null || echo 0)
-          if [ $filesize -lt 1000000 ]; then
-            echo "❌ 下载文件异常，尝试备用源..."
-            exit 1
-          fi
-          echo "✅ OpenCV下载成功，大小: $filesize 字节"
-          unzip -q opencv.zip -d native_libs
-          mkdir -p app/src/main/jniLibs/arm64-v8a
-          cp native_libs/OpenCV-android-sdk/sdk/native/libs/arm64-v8a/*.so app/src/main/jniLibs/arm64-v8a/ 2>/dev/null || echo "⚠️ 复制so库失败"
-          echo "✅ OpenCV准备完成"
+    # 2. 从腾讯云下载 Gradle 纯净版 (和极狐逻辑一样)
+    - name: Download Gradle from Tencent Mirror
+      run: |
+        wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
+        unzip -q /tmp/gradle.zip -d /tmp/
 
-      # ✅ 修复：增加超时和重试
-      - name: 打包Release APK
-        run: |
-          # 增加Gradle超时时间
-          export GRADLE_OPTS="-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8 -Dorg.gradle.daemon=false"
-          ./gradlew assembleRelease --stacktrace --no-daemon -Dorg.gradle.internal.http.socketTimeout=60000 -Dorg.gradle.internal.http.connectionTimeout=60000
-        env:
-          GRADLE_OPTS: "-Xmx3g -XX:+UseParallelGC -Dfile.encoding=UTF-8 -Dorg.gradle.daemon=false"
+    # 3. 使用本地 Gradle 开始编译
+    - name: Build Debug APK
+      run: |
+        /tmp/gradle-8.7/bin/gradle assembleDebug --no-daemon
 
-      - name: 查找并上传APK
-        id: upload_apk
-        run: |
-          echo "🔍 正在查找APK文件..."
-          
-          APK_FILES=$(find app/build -name "*.apk" -type f 2>/dev/null)
-          
-          if [ -z "$APK_FILES" ]; then
-            echo "❌ 未找到任何APK文件！"
-            echo "检查目录结构："
-            ls -la app/build/outputs/apk/ 2>/dev/null || echo "目录不存在"
-            exit 1
-          fi
-          
-          echo "✅ 找到APK文件："
-          echo "$APK_FILES"
-          echo ""
-          
-          for apk in $APK_FILES; do
-            filesize=$(stat -c%s "$apk" 2>/dev/null || echo 0)
-            echo "📦 $(basename $apk) - $((filesize/1024)) KB"
-          done
-
-      - name: 上传APK产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: LingMiao-V2-APK
-          path: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/*/*.apk
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: 备用上传（整个目录）
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: APK-目录
-          path: app/build/outputs/apk/
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: 创建Release并上传APK
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "灵喵 V2 - ${{ github.run_number }}"
-          tag_name: "v2.0.${{ github.run_number }}"
-          body: |
-            ## 🎱 灵喵 V2 自动构建
-            
-            ### 📦 版本信息
-            - 构建编号: #${{ github.run_number }}
-            
-            ### ⚠️ 重要提示
-            APK可能是未签名版本，如无法安装请用MT管理器签名。
-            
-            ### 📱 安装步骤
-            1. 下载 APK
-            2. 如提示未签名，用MT管理器签名
-            3. 安装到手机
-            4. 授予悬浮窗权限
-          files: |
-            app/build/outputs/apk/release/*.apk
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: 显示下载链接
-        run: |
-          echo "=========================================="
-          echo "✅ 构建成功！"
-          echo ""
-          echo "📥 下载方式1 - Artifacts（推荐）:"
-          echo "   https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo ""
-          echo "📥 下载方式2 - Releases:"
-          echo "   https://github.com/${{ github.repository }}/releases"
-          echo ""
-          echo "📂 在页面底部找到 Artifacts 区域下载APK"
-          echo "=========================================="
+    # 4. 上传 APK
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
