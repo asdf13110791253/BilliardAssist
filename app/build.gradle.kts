@@ -4,7 +4,6 @@ plugins {
 }
 
 android {
-    // 🔥 【核心修复1】强制锁定命名空间，彻底清除旧包名残留
     namespace = "com.lingmiao.v2"
     compileSdk = 34
 
@@ -36,12 +35,10 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.activity:activity-compose:1.9.0")
-    
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
