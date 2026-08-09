@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_panel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#E6FFF5F7"
+    android:padding="16dp"
+    android:elevation="20dp">
+
+    <!-- 顶部可折叠工具栏 -->
+    <LinearLayout
+        android:id="@+id/top_toolbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:padding="10dp 16dp"
+        android:background="#E6FFF5F7"
+        android:elevation="6dp">
+
+        <TextView
+            android:id="@+id/btn_toggle_toolbar"
+            android:text="◀"
+            android:textColor="#764E54"
+            android:textSize="20sp"
+            android:paddingEnd="16dp" />
+
+        <View android:layout_width="1dp" android:layout_height="16dp" android:background="#55A08A88"/>
+        <TextView android:text="👁" android:textColor="#764E54" android:textSize="18sp" android:padding="8dp" />
+    </LinearLayout>
+
+    <!-- 十字方向键网格 -->
+    <GridLayout
+        android:id="@+id/dpad_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_toolbar"
+        android:layout_centerHorizontal="true"
+        android:rowCount="4"
+        android:columnCount="3"
+        android:alignmentMode="alignMargins">
+
+        <!-- 第1行 -->
+        <Space android:layout_row="0" android:layout_column="0" android:layout_width="50dp" android:layout_height="0dp"/>
+        <Button android:id="@+id/btn_up" android:text="↑" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="0" android:layout_column="1" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+        <Button android:id="@+id/btn_down" android:text="↓" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="0" android:layout_column="2" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+
+        <!-- 第2行 -->
+        <Button android:id="@+id/btn_right1" android:text="→" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="1" android:layout_column="0" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+        <Space android:layout_row="1" android:layout_column="1" android:layout_width="50dp" android:layout_height="0dp"/>
+        <Button android:id="@+id/btn_right2" android:text="→" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="1" android:layout_column="2" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+
+        <!-- 第3行 -->
+        <Button android:id="@+id/btn_left1" android:text="←" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="2" android:layout_column="0" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+        <Space android:layout_row="2" android:layout_column="1" android:layout_width="50dp" android:layout_height="0dp"/>
+        <Button android:id="@+id/btn_left2" android:text="←" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="2" android:layout_column="2" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+
+        <!-- 第4行 -->
+        <Space android:layout_row="3" android:layout_column="0" android:layout_width="50dp" android:layout_height="0dp"/>
+        <Button android:id="@+id/btn_up2" android:text="↑" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="3" android:layout_column="1" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+        <Button android:id="@+id/btn_down2" android:text="↓" android:backgroundTint="#E6D6CF" android:textColor="#764E54" android:textSize="22sp" android:layout_row="3" android:layout_column="2" android:layout_width="50dp" android:layout_height="50dp" android:layout_margin="5dp"/>
+    </GridLayout>
+
+    <!-- 右下角拖拽柄 -->
+    <TextView
+        android:id="@+id/resize_handle"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:text="◢"
+        android:textSize="18sp"
+        android:textColor="#AA764E54"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="-8dp" />
+</RelativeLayout>
