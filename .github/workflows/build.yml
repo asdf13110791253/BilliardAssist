@@ -9,16 +9,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 🔥 核心修复：更新到 v5，并且必须加上 distribution: 'temurin'
     - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
+        distribution: 'temurin'
 
-    # 1. 安装 Android SDK 和 NDK（这一步极狐有，GitHub也必须装，否则C++编译会挂）
+    # 1. 安装 Android SDK 和 NDK
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
-        log-accept-licenses: false # 自动接受许可证
+        log-accept-licenses: false
 
     - name: Install NDK and Tools
       run: |
@@ -26,7 +28,7 @@ jobs:
         sdkmanager "build-tools;34.0.0"
         sdkmanager "ndk;26.1.10909125"
 
-    # 2. 从腾讯云下载 Gradle 纯净版 (和极狐逻辑一样)
+    # 2. 从腾讯云下载纯净版 Gradle
     - name: Download Gradle from Tencent Mirror
       run: |
         wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
