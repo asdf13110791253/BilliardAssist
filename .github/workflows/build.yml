@@ -9,7 +9,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 🔥 核心修复：更新到 v5，并且必须加上 distribution: 'temurin'
     - name: Set up JDK 17
       uses: actions/setup-java@v5
       with:
@@ -33,6 +32,11 @@ jobs:
       run: |
         wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
         unzip -q /tmp/gradle.zip -d /tmp/
+
+    # 🔥【终极手段】：在编译前执行一次彻底深度清理，让旧包名彻底蒸发！
+    - name: Clean Project Cache
+      run: |
+        /tmp/gradle-8.7/bin/gradle clean --no-daemon
 
     # 3. 使用本地 Gradle 开始编译
     - name: Build Debug APK
