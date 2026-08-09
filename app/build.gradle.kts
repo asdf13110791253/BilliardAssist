@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    // 🔥 统一命名空间，彻底解决包名不匹配导致的资源找不到问题
+    // 🔥 核心修复：强行锁定包名为 com.lingmiao.v2，彻底干掉旧包名残留
     namespace = "com.lingmiao.v2"
     compileSdk = 34
 
@@ -14,8 +14,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -25,7 +23,7 @@ android {
         }
     }
     
-    // 顶级应用标准：统一启用 Compose 和 Java 17 支持
+    // 顶级规范：开启 Compose、统一 Java 17
     buildFeatures { compose = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -40,13 +38,13 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.activity:activity-compose:1.9.0")
     
-    // Compose UI 系列（现代化的声明式 UI 基础）
+    // Compose 基础（现代化 UI 所需）
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     
-    // 协程（保证悬浮窗和服务流畅运行）
+    // 协程基础（确保悬浮窗流畅）
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
