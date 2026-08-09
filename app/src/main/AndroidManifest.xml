@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.billiardassist">
+    package="com.lingmiao.v2">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -23,16 +23,22 @@
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
 
+        <!-- ✅【核心修改】将您刚新建的 MainActivity 设为 App 的主入口 -->
         <activity
-            android:name=".ui.GuideActivity"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 旧的引导页，已取消启动属性 -->
+        <activity
+            android:name=".ui.GuideActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait" />
 
         <!-- 设置页面 -->
         <activity
@@ -50,6 +56,13 @@
 
         <service
             android:name=".service.CaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            android:stopWithTask="true" />
+
+        <!-- ✅【核心修改】将您刚新建的 OverlayService 注册进系统 -->
+        <service
+            android:name=".service.OverlayService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
             android:stopWithTask="true" />
