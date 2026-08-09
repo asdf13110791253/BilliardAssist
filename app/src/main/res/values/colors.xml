@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 高级豆沙粉色系 -->
+    <color name="pink_primary">#D15974</color>           <!-- 主色调：按键、状态栏 -->
+    <color name="pink_primary_light">#FCE8EC</color>     <!-- 背景浅粉：卡片、整体背景 -->
+    <color name="pink_dark_text">#764E54</color>         <!-- 深豆沙色：主标题文字 -->
+    <color name="pink_light_text">#BA9197</color>        <!-- 浅灰粉：辅助说明文字 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
