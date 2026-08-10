@@ -15,41 +15,24 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. 彻底删除云端机器上所有缓存的痕迹
-    - name: Nuclear Cache Clean
-      run: |
-        rm -rf ~/.gradle/
-        rm -rf ~/.m2/
-        rm -rf ~/.android/
-        rm -rf /tmp/gradle*
+    # ✅ 关键：清理项目内的构建缓存（你之前漏的）
+    - name: Clean project build cache
+      run: rm -rf app/build
 
-    # 2. 重新安装纯净的 SDK 环境
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        log-accept-licenses: false
 
-    - name: Install NDK and Tools
+    - name: Install SDK & Build Tools
       run: |
         sdkmanager "platforms;android-34"
         sdkmanager "build-tools;34.0.0"
-        sdkmanager "ndk;26.1.10909125"
 
-    # 3. 重新下载 Gradle 纯净版
-    - name: Download Gradle from Tencent Mirror
-      run: |
-        wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
-        unzip -q /tmp/gradle.zip -d /tmp/
+    # ✅ 只用 gradlew，不用手动 Gradle
+    - name: Grant execute permission
+      run: chmod +x ./gradlew
 
-    # 4. 重新生成 Wrapper（绝对干净）
-    - name: Generate clean wrapper
-      run: |
-        /tmp/gradle-8.7/bin/gradle wrapper --gradle-version 8.7 --no-daemon
-
-    # 5. 重新编译！此时没有任何旧包名残留
     - name: Build Debug APK
-      run: |
-        /tmp/gradle-8.7/bin/gradle assembleDebug --no-daemon
+      run: ./gradlew clean assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
