@@ -33,9 +33,10 @@ jobs:
         wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
         unzip -q /tmp/gradle.zip -d /tmp/
 
-    # 🔥【终极手段】：在编译前执行一次彻底深度清理，让旧包名彻底蒸发！
-    - name: Clean Project Cache
+    # 🔥 【终极清理】：在正式编译前，强制清理掉旧包名的残留缓存！
+    - name: Purge Old Cache
       run: |
+        rm -rf ~/.gradle/caches/
         /tmp/gradle-8.7/bin/gradle clean --no-daemon
 
     # 3. 使用本地 Gradle 开始编译
