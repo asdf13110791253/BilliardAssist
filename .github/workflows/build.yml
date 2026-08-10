@@ -15,32 +15,26 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. 云端彻底清除旧缓存
-    - name: Purge Gradle Wrapper Cache
-      run: |
-        rm -rf ~/.gradle/wrapper/
-        rm -rf ~/.gradle/caches/
-
-    # 2. 安装安卓编译环境
+    # 1. 安装 Android SDK 和必要的构建工具
     - name: Setup Android SDK & NDK
       uses: android-actions/setup-android@v3
       with:
         log-accept-licenses: false
-
     - name: Install Tools
       run: |
         sdkmanager "platforms;android-34"
         sdkmanager "build-tools;34.0.0"
         sdkmanager "ndk;26.1.10909125"
 
-    # 3. 🔥【核心修复】给刚生成的 gradlew 加执行权限
-    - name: Grant Permissions
-      run: chmod +x gradlew
-
-    # 4. 清理并打包
-    - name: Clean and Assemble
+    # 2. 🔥 【绕过包装器】下载纯净 Gradle 并直接编译
+    - name: Download Gradle and Build
       run: |
-        ./gradlew clean assembleDebug --no-daemon
+        # 下载纯净版 Gradle 8.7
+        wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
+        unzip -q /tmp/gradle.zip -d /tmp/
+        
+        # 【核心改动】直接使用纯净版 Gradle 进行清理和编译，完全绕过损坏的 gradlew
+        /tmp/gradle-8.7/bin/gradle clean assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
