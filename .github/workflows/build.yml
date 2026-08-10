@@ -15,14 +15,11 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. 🔥【核心修复：手动生成全新包装器】
-    - name: Download Gradle and Regenerate Wrapper
+    # 1. 🔥 【云端核心熔断】强行删除 Gradle 的 Wrapper 和插件缓存，它必须重新下载纯净版
+    - name: Purge Gradle Wrapper Cache
       run: |
-        wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
-        unzip -q /tmp/gradle.zip -d /tmp/
-        # 强制用纯净版 Gradle 重新生成 Wrapper，彻底解决 jar 包损坏问题
-        /tmp/gradle-8.7/bin/gradle wrapper --gradle-version 8.7
-        chmod +x gradlew
+        rm -rf ~/.gradle/wrapper/
+        rm -rf ~/.gradle/caches/
 
     # 2. 安装安卓编译环境
     - name: Setup Android SDK & NDK
@@ -36,12 +33,11 @@ jobs:
         sdkmanager "build-tools;34.0.0"
         sdkmanager "ndk;26.1.10909125"
 
-    # 3. 🔥【核心修复：先清理再打包】
-    - name: Clean and Build Debug APK
+    # 3. 使用我们完全正确的 Gradle Wrapper 重新编译
+    - name: Clean and Assemble
       run: |
         ./gradlew clean assembleDebug --no-daemon
 
-    # 4. 上传产物
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
