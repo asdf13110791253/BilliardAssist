@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.lingmiao.v2">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -32,11 +31,32 @@
         <activity android:name=".ui.CalibrationActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         
-        <activity android:name=".service.CapturePermissionActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
-        <service android:name=".service.OverlayService" android:exported="false" android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
-        <service android:name=".service.CaptureService" android:exported="false" android:foregroundServiceType="mediaProjection" android:stopWithTask="true" />
-        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        <activity 
+            android:name=".service.CapturePermissionActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:noHistory="true" />
+            
+        <service 
+            android:name=".service.OverlayService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            android:stopWithTask="true" />
+            
+        <service 
+            android:name=".service.CaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            android:stopWithTask="true" />
+            
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 </manifest>
