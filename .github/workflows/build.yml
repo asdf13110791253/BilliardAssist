@@ -15,25 +15,33 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ✅ 关键：清理项目内的构建缓存（你之前漏的）
-    - name: Clean project build cache
-      run: rm -rf app/build
+    # 1. 🔥【核心修复：手动生成全新包装器】
+    - name: Download Gradle and Regenerate Wrapper
+      run: |
+        wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
+        unzip -q /tmp/gradle.zip -d /tmp/
+        # 强制用纯净版 Gradle 重新生成 Wrapper，彻底解决 jar 包损坏问题
+        /tmp/gradle-8.7/bin/gradle wrapper --gradle-version 8.7
+        chmod +x gradlew
 
-    - name: Setup Android SDK
+    # 2. 安装安卓编译环境
+    - name: Setup Android SDK & NDK
       uses: android-actions/setup-android@v3
+      with:
+        log-accept-licenses: false
 
-    - name: Install SDK & Build Tools
+    - name: Install Tools
       run: |
         sdkmanager "platforms;android-34"
         sdkmanager "build-tools;34.0.0"
+        sdkmanager "ndk;26.1.10909125"
 
-    # ✅ 只用 gradlew，不用手动 Gradle
-    - name: Grant execute permission
-      run: chmod +x ./gradlew
+    # 3. 🔥【核心修复：先清理再打包】
+    - name: Clean and Build Debug APK
+      run: |
+        ./gradlew clean assembleDebug --no-daemon
 
-    - name: Build Debug APK
-      run: ./gradlew clean assembleDebug --no-daemon
-
+    # 4. 上传产物
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
