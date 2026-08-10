@@ -15,7 +15,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. 🔥 【云端核心熔断】强行删除 Gradle 的 Wrapper 和插件缓存，它必须重新下载纯净版
+    # 1. 云端彻底清除旧缓存
     - name: Purge Gradle Wrapper Cache
       run: |
         rm -rf ~/.gradle/wrapper/
@@ -33,7 +33,11 @@ jobs:
         sdkmanager "build-tools;34.0.0"
         sdkmanager "ndk;26.1.10909125"
 
-    # 3. 使用我们完全正确的 Gradle Wrapper 重新编译
+    # 3. 🔥【核心修复】给刚生成的 gradlew 加执行权限
+    - name: Grant Permissions
+      run: chmod +x gradlew
+
+    # 4. 清理并打包
     - name: Clean and Assemble
       run: |
         ./gradlew clean assembleDebug --no-daemon
