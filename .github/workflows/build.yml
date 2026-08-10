@@ -15,7 +15,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 1. 安装 Android SDK 和 NDK
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
@@ -27,24 +26,26 @@ jobs:
         sdkmanager "build-tools;34.0.0"
         sdkmanager "ndk;26.1.10909125"
 
-    # 2. 从腾讯云下载纯净版 Gradle
     - name: Download Gradle from Tencent Mirror
       run: |
         wget --no-verbose --output-document=/tmp/gradle.zip https://mirrors.cloud.tencent.com/gradle/gradle-8.7-bin.zip
         unzip -q /tmp/gradle.zip -d /tmp/
 
-    # 🔥 【终极清理】：在正式编译前，强制清理掉旧包名的残留缓存！
-    - name: Purge Old Cache
+    # 🔥 【彻底熔断】先删光云端缓存目录，再执行清理命令
+    - name: Nuclear Cache Clean
       run: |
         rm -rf ~/.gradle/caches/
         /tmp/gradle-8.7/bin/gradle clean --no-daemon
 
-    # 3. 使用本地 Gradle 开始编译
+    # 🔥 强制重新生成 Gradle Wrapper，彻底切断旧 jar 包关联
+    - name: Force Regenerate Wrapper
+      run: |
+        /tmp/gradle-8.7/bin/gradle wrapper --gradle-version 8.7 --no-daemon
+
     - name: Build Debug APK
       run: |
         /tmp/gradle-8.7/bin/gradle assembleDebug --no-daemon
 
-    # 4. 上传 APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
