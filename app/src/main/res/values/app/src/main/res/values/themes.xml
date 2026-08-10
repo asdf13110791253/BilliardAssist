@@ -1,5 +1,5 @@
 <resources>
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.LingMiaoPinkV2" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/pink_primary</item>
         <item name="colorPrimaryDark">@color/pink_primary</item>
         <item name="colorAccent">@color/pink_primary</item>
